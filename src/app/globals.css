@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+/*
+  Design system — Belleza SaaS
+  Dirección visual: gradientes suaves melocotón → malva, tarjetas limpias
+  en blanco cálido, botones cápsula (pill) en tinta oscura, resaltados en
+  degradé suave para estados seleccionados. Inspirado en apps de reserva
+  premium — cálido, editorial, sin aspecto de "dashboard genérico".
+*/
+
+:root {
+  --gradient-start: #faf1e7;
+  --gradient-mid: #f3e3e2;
+  --gradient-end: #ece0ea;
+
+  --color-canvas: #f6ece4;
+  --color-surface: #fffbf8;
+  --color-surface-raised: #ffffff;
+  --color-border: #ece1d8;
+  --color-border-strong: #ddccc0;
+
+  --color-ink-900: #221c1e;
+  --color-ink-700: #4d4247;
+  --color-ink-500: #7c6f74;
+  --color-ink-400: #9c8d90;
+  --color-ink-300: #c3b4b6;
+
+  /* acento cálido melocotón→rosa, usado en estados seleccionados/resaltados */
+  --color-accent: #cf6f56;
+  --color-accent-hover: #bd5f47;
+  --color-accent-soft: #f7e3da;
+  --color-accent-ink: #7a3a28;
+  --gradient-accent: linear-gradient(135deg, #f6cdb8 0%, #eeb3c0 100%);
+  --gradient-accent-strong: linear-gradient(135deg, #e8a98d 0%, #dd8fa0 100%);
+
+  --color-success: #3f7d58;
+  --color-success-soft: #e4f0e8;
+  --color-warning: #a8722e;
+  --color-warning-soft: #f6ead7;
+  --color-danger: #b23b3b;
+  --color-danger-soft: #f8e4e2;
+  --color-info: #3b6ea5;
+  --color-info-soft: #e4edf6;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 3px rgba(40, 24, 24, 0.05);
+  --shadow-md: 0 8px 24px rgba(40, 24, 24, 0.08);
+  --shadow-popover: 0 16px 40px rgba(40, 24, 24, 0.16);
+
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink-900);
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-ink-900: var(--color-ink-900);
+  --color-ink-700: var(--color-ink-700);
+  --color-ink-500: var(--color-ink-500);
+  --color-ink-400: var(--color-ink-400);
+  --color-ink-300: var(--color-ink-300);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-accent-ink: var(--color-accent-ink);
+
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-info: var(--color-info);
+  --color-info-soft: var(--color-info-soft);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  color: var(--color-ink-900);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+/* Fondo degradado suave, reutilizable donde el lienzo completo debe sentir
+   la dirección visual (auth, shell de la app). */
+.gradient-canvas {
+  background: radial-gradient(120% 140% at 15% 0%, var(--gradient-start) 0%, var(--gradient-mid) 55%, var(--gradient-end) 100%);
+}
