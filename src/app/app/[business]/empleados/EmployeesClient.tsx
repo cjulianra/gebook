@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useBusiness } from "@/lib/context/BusinessContext";
+import { useOnboardingRefresh } from "@/components/onboarding/OnboardingGate";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -60,8 +61,8 @@ export function EmployeesClient({
   initialPayouts: Payout[];
   earnedCommissions: Record<string, number>;
 }) {
-  const router = useRouter();
-  const { business } = useBusiness();
+  const { business, onboardingStep } = useBusiness();
+  const refreshOnboarding = useOnboardingRefresh();
   const [members, setMembers] = useState(initialMembers);
   const [assignments, setAssignments] = useState(initialAssignments);
   const [schedules, setSchedules] = useState(initialSchedules);
@@ -86,7 +87,7 @@ export function EmployeesClient({
       <PageHeader
         title="Empleados"
         description="Las personas que atienden en tu negocio y los servicios que realizan."
-        action={<Button onClick={() => setInviteOpen(true)}>Crear empleado</Button>}
+        action={<Button onClick={() => setInviteOpen(true)}>{members.length === 0 ? "Crear empleado" : "Agregar otro empleado"}</Button>}
       />
 
       <Card>
@@ -126,19 +127,29 @@ export function EmployeesClient({
         )}
       </Card>
 
+      {onboardingStep === "empleados" && members.length > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 bg-[var(--color-accent-soft)] px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-ink-900)]">¡Todo listo! 🎉</p>
+            <p className="text-sm text-[var(--color-ink-700)]">Puedes seguir agregando empleados o ir directo a tu Agenda.</p>
+          </div>
+          <Link href={`/app/${business.slug}/reservas`} prefetch={false}>
+            <Button>Ir a mi Agenda →</Button>
+          </Link>
+        </Card>
+      )}
+
       <InviteModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         businessId={businessId}
         services={services}
         onInvited={(member, serviceIds) => {
-          const wasFirstEmployee = members.length === 0;
           setMembers((prev) => [member, ...prev]);
           setAssignments((prev) => [...prev, ...serviceIds.map((service_id) => ({ business_member_id: member.id, service_id }))]);
           setInviteOpen(false);
           showToast("Invitación enviada.");
-          // Si este es el primer empleado, el onboarding queda completo: lo llevamos directo a la Agenda.
-          if (wasFirstEmployee) router.push(`/app/${business.slug}/reservas`);
+          refreshOnboarding?.();
         }}
       />
 

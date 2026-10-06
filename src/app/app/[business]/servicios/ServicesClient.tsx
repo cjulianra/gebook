@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
 import { useBusiness } from "@/lib/context/BusinessContext";
+import { useOnboardingRefresh } from "@/components/onboarding/OnboardingGate";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -19,8 +20,8 @@ type Service = Database["public"]["Tables"]["services"]["Row"];
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
 export function ServicesClient({ businessId, initialServices }: { businessId: string; initialServices: Service[] }) {
-  const router = useRouter();
-  const { business } = useBusiness();
+  const { business, onboardingStep } = useBusiness();
+  const refreshOnboarding = useOnboardingRefresh();
   const [services, setServices] = useState(initialServices);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
@@ -64,7 +65,7 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
       <PageHeader
         title="Servicios"
         description="Los servicios que ofrece tu negocio y que podrás asignar a empleados."
-        action={<Button onClick={openCreate}>Nuevo servicio</Button>}
+        action={<Button onClick={openCreate}>{services.length === 0 ? "Crear servicio" : "Agregar otro servicio"}</Button>}
       />
 
       <Card>
@@ -104,18 +105,28 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
         )}
       </Card>
 
+      {onboardingStep === "servicios" && services.length > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 bg-[var(--color-accent-soft)] px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-ink-900)]">¿Listo con tus servicios?</p>
+            <p className="text-sm text-[var(--color-ink-700)]">Puedes seguir agregando o pasar a crear tus empleados.</p>
+          </div>
+          <Link href={`/app/${business.slug}/empleados`} prefetch={false}>
+            <Button>Continuar: crear empleados →</Button>
+          </Link>
+        </Card>
+      )}
+
       <ServiceFormModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         businessId={businessId}
         service={editing}
         onSaved={(saved, isNew) => {
-          const wasFirstService = isNew && services.length === 0;
           setServices((prev) => (isNew ? [saved, ...prev] : prev.map((s) => (s.id === saved.id ? saved : s))));
           setModalOpen(false);
           showToast(isNew ? "Servicio creado." : "Servicio actualizado.");
-          // Si este es el primer servicio, avanzamos directo al siguiente paso del onboarding: crear empleados.
-          if (wasFirstService) router.push(`/app/${business.slug}/empleados`);
+          if (isNew) refreshOnboarding?.();
         }}
       />
 

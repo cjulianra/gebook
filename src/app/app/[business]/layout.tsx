@@ -85,7 +85,12 @@ export default async function BusinessLayout({
         }}
       >
         <AppShell>
-          <OnboardingGate slug={business.slug} step={onboardingStep}>
+          <OnboardingGate
+            businessId={business.id}
+            slug={business.slug}
+            gated={membership.role === "owner" || membership.role === "admin"}
+            initialStep={onboardingStep}
+          >
             {children}
           </OnboardingGate>
         </AppShell>

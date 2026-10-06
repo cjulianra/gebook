@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils/cn";
 const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { business, membership, profile } = useBusiness();
+  const { business, membership, profile, onboardingStep } = useBusiness();
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={href}
+                prefetch={onboardingStep ? false : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-[var(--radius-pill)] px-4 py-2.5 text-sm font-medium transition-all",
                   active
@@ -114,6 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={href}
+              prefetch={onboardingStep ? false : undefined}
               className={cn(
                 "flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius-pill)] py-2 text-[10px] font-medium transition-colors",
                 active ? "bg-[var(--color-ink-900)] text-white" : "text-[var(--color-ink-500)]"
@@ -133,6 +135,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         base={base}
         pathname={pathname}
         onLogout={handleLogout}
+        noPrefetch={!!onboardingStep}
       />
     </div>
   );
@@ -153,6 +156,7 @@ function MoreMenuPanel({
   base,
   pathname,
   onLogout,
+  noPrefetch,
 }: {
   open: boolean;
   onClose: () => void;
@@ -160,6 +164,7 @@ function MoreMenuPanel({
   base: string;
   pathname: string | null;
   onLogout: () => void;
+  noPrefetch?: boolean;
 }) {
   if (!open || typeof document === "undefined") return null;
 
@@ -175,6 +180,7 @@ function MoreMenuPanel({
               key={item.href}
               href={href}
               onClick={onClose}
+              prefetch={noPrefetch ? false : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-colors",
                 active ? "bg-[var(--color-ink-900)] text-white" : "text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
