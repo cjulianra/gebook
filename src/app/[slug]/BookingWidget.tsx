@@ -259,12 +259,8 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
           <div className="min-w-0">
             <h1 className="text-xl font-semibold text-[var(--color-ink-900)]">{business.name}</h1>
             <p className="truncate text-xs text-[var(--color-ink-500)]">
-              {[
-                business.business_type,
-                [business.address, business.neighborhood, business.city].filter(Boolean).join(", "),
-              ]
-                .filter(Boolean)
-                .join(" · ") || "Reserva tu cita en línea"}
+              {[business.address, business.neighborhood, business.city].filter(Boolean).join(", ") ||
+                "Reserva tu cita en línea"}
             </p>
           </div>
         </div>

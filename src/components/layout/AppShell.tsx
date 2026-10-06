@@ -8,7 +8,6 @@ import { NAV_ITEMS } from "./nav-items";
 import { NavIcon } from "./icons";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { Avatar } from "@/components/ui/Avatar";
-import { NotificationBell } from "@/components/layout/NotificationBell";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 
@@ -38,9 +37,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="gradient-canvas min-h-screen md:flex">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col px-3 py-4 md:flex">
-        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)]/70 px-4 py-3 shadow-[var(--shadow-sm)]">
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={44} />
-          <NotificationBell />
+        <div className="flex items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface)]/70 px-4 py-4 shadow-[var(--shadow-sm)]">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={64} fill />
         </div>
 
         <nav className="flex-1 space-y-1 py-4">
@@ -89,11 +87,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile header */}
       <header className="relative flex items-center justify-between px-4 py-3 md:hidden">
-        <div className="flex items-center rounded-[var(--radius-pill)] bg-[var(--color-surface)]/80 p-1 shadow-[var(--shadow-sm)]">
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={34} />
+        <div className="flex items-center rounded-[var(--radius-md)] bg-[var(--color-surface)]/80 px-2 py-1.5 shadow-[var(--shadow-sm)]">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={44} fill />
         </div>
         <div className="flex items-center gap-2">
-          <NotificationBell className="rounded-full bg-[var(--color-surface)]/80 shadow-[var(--shadow-sm)]" />
           <button
             onClick={() => setMoreOpen((v) => !v)}
             aria-label="Abrir menú"
@@ -222,18 +219,26 @@ export function BusinessMark({
   logoUrl,
   size,
   rounded = "sm",
+  fill = false,
 }: {
   name: string;
   logoUrl: string | null;
   size: number;
   rounded?: "sm" | "full";
+  /** El contenedor padre ya aporta el padding; el logo ocupa todo el alto disponible. */
+  fill?: boolean;
 }) {
   const radius = rounded === "full" ? "rounded-full" : "rounded-[var(--radius-sm)]";
   if (logoUrl) {
     // Los logos suelen ser horizontales: se muestran completos (sin recortar),
-    // solos (sin nombre al lado), con su propio padding vertical y una
-    // esquina apenas redondeada — no el óvalo/círculo de `rounded="full"`,
-    // que recortaría un logo horizontal.
+    // solos (sin nombre al lado), con una esquina apenas redondeada — no el
+    // óvalo/círculo de `rounded="full"`, que recortaría un logo horizontal.
+    if (fill) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
+        <img src={logoUrl} alt={name} className="w-full object-contain" style={{ height: size }} />
+      );
+    }
     return (
       <div className="flex shrink-0 items-center justify-center rounded-[6px] bg-[var(--color-surface)] px-3 py-2.5" style={{ height: size }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host */}
