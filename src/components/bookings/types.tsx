@@ -54,13 +54,15 @@ export interface Assignment {
   service_id: string;
 }
 
+// El estado "pending" ya no se usa: toda reserva nace "confirmed". El paso a
+// "in_progress"/"completed" ocurre solo (ver syncBookingStatuses) según la
+// hora real del servicio; la única acción manual que queda es poder marcar
+// "Completada" antes de tiempo desde el menú de tres puntos.
 export const NEXT_STATUS: Partial<Record<BookingStatus, BookingStatus>> = {
-  pending: "confirmed",
   confirmed: "completed",
   in_progress: "completed",
 };
 export const NEXT_LABEL: Partial<Record<BookingStatus, string>> = {
-  pending: "Confirmar",
   confirmed: "Completar",
   in_progress: "Completar",
 };

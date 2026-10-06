@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
+import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
 import { bogotaDateTime, todayInBogota } from "@/lib/utils/dateRange";
 import { BookingsClient } from "./BookingsClient";
 
@@ -15,6 +16,8 @@ export default async function ReservasPage({
   const supabase = await createClient();
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
+
+  await syncBookingStatuses(supabase, business.id);
 
   const day = date ?? todayInBogota();
   const startOfDay = bogotaDateTime(day, "00:00:00");

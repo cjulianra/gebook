@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
+import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
 import { bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
 import { MiPerfilClient } from "./MiPerfilClient";
 
@@ -27,6 +28,8 @@ export default async function MiPerfilPage({
   const supabase = await createClient();
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
+
+  await syncBookingStatuses(supabase, business.id);
 
   const {
     data: { user },

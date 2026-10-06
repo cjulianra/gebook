@@ -87,6 +87,7 @@ export function BookingRow({
           <Avatar name={one(employee?.profiles)?.full_name ?? ""} src={one(employee?.employee_details)?.photo_url} size={20} />
           <span className="truncate">{one(employee?.profiles)?.full_name}</span>
         </span>
+        <span className="h-3 w-px shrink-0 bg-[var(--color-border-strong)]" />
         <span className="max-w-full truncate">{service?.name}</span>
       </p>
     </div>

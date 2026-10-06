@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
+import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
@@ -34,6 +35,8 @@ export default async function EmployeeReportDetailPage({
   const supabase = await createClient();
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
+
+  await syncBookingStatuses(supabase, business.id);
 
   const activePreset = sp.preset ?? "mes";
   const { from, to } = sp.from && sp.to ? { from: sp.from, to: sp.to } : presetRange(activePreset);

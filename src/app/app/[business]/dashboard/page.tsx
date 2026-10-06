@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
+import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/States";
 import { AccountPanel, type Payout } from "@/components/employees/AccountModal";
@@ -29,6 +30,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
   const supabase = await createClient();
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
+
+  await syncBookingStatuses(supabase, business.id);
 
   const {
     data: { user },
@@ -96,7 +99,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
       .select("id, start_at, status, clients(first_name, last_name), services(name)")
       .eq("business_id", business.id)
       .gt("start_at", endOfDay.toISOString())
-      .in("status", ["pending", "confirmed"])
+      .eq("status", "confirmed")
       .order("start_at", { ascending: true })
       .limit(5),
     supabase

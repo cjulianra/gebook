@@ -123,7 +123,7 @@ export async function confirmBooking(input: ConfirmBookingInput) {
     business_member_id: input.businessMemberId,
     start_at: startAt.toISOString(),
     end_at: endAt.toISOString(),
-    status: "pending",
+    status: "confirmed",
   });
 
   if (bookingError) return { error: "No pudimos crear la reserva. Intenta de nuevo." };

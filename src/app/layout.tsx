@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Belleza — Gestión para negocios de belleza",
+  title: "Gebook — Gestión para negocios de belleza",
   description: "Plataforma para administrar servicios, empleados, reservas y clientes.",
 };
 

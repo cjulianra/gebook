@@ -45,14 +45,14 @@ export function WeekStrip({
           <button
             onClick={() => onShiftWeek(-1)}
             aria-label="Semana anterior"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-ink-500)] hover:bg-[var(--color-canvas)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-2xl font-semibold text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
           >
             ‹
           </button>
           <button
             onClick={() => onShiftWeek(1)}
             aria-label="Semana siguiente"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-ink-500)] hover:bg-[var(--color-canvas)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-2xl font-semibold text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
           >
             ›
           </button>

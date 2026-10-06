@@ -74,7 +74,7 @@ function PortalInner({ fullName, initialBookings }: { fullName: string; initialB
       <header className="mx-auto flex max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
         <div>
           <h1 className="text-xl font-semibold text-[var(--color-ink-900)]">Hola, {fullName.split(" ")[0]}</h1>
-          <p className="mt-1 text-sm text-[var(--color-ink-500)]">Tus reservas en todos los negocios de Belleza.</p>
+          <p className="mt-1 text-sm text-[var(--color-ink-500)]">Tus reservas en todos los negocios de Gebook.</p>
         </div>
         <button
           onClick={handleLogout}
