@@ -42,8 +42,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="gradient-canvas min-h-screen md:flex">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col px-3 py-4 md:flex">
-        <div className="flex items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface)]/70 px-2 py-2 shadow-[var(--shadow-sm)]">
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={84} fill />
+        <div className="flex items-center justify-center">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={96} fill />
         </div>
 
         <nav className="flex-1 space-y-1 py-4">
