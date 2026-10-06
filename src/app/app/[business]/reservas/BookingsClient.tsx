@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { BookingStatus } from "@/lib/types/database";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input, Label, Select, FieldError } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge, BookingStatusBadge } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
@@ -18,81 +17,20 @@ import { useBusiness } from "@/lib/context/BusinessContext";
 import { cn } from "@/lib/utils/cn";
 import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { getAvailableSlots } from "@/app/[slug]/actions";
-
-function one<T>(v: T | T[] | null | undefined): T | undefined {
-  return Array.isArray(v) ? v[0] : v ?? undefined;
-}
-
-function addMinutes(time: string, minutes: number) {
-  const [h, m] = time.split(":").map(Number);
-  const total = ((h * 60 + m + minutes) % (24 * 60) + 24 * 60) % (24 * 60);
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-}
-
-function capitalizeFirst(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function timeToMinutes(hhmm: string) {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function DotsIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <circle cx="12" cy="5" r="1.8" />
-      <circle cx="12" cy="12" r="1.8" />
-      <circle cx="12" cy="19" r="1.8" />
-    </svg>
-  );
-}
-
-interface Employee {
-  id: string;
-  profiles: { full_name: string } | { full_name: string }[] | null;
-  employee_details?: { photo_url: string | null } | { photo_url: string | null }[] | null;
-}
-interface Service {
-  id: string;
-  name: string;
-  duration_minutes: number;
-  price: number;
-}
-interface Client {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  phone: string | null;
-}
-interface Booking {
-  id: string;
-  start_at: string;
-  end_at: string;
-  status: BookingStatus;
-  notes: string | null;
-  client_id: string;
-  service_id: string;
-  business_member_id: string;
-  clients: Client | Client[] | null;
-  services: Service | Service[] | null;
-  business_members: Employee | Employee[] | null;
-}
-interface Assignment {
-  business_member_id: string;
-  service_id: string;
-}
-
-const NEXT_STATUS: Partial<Record<BookingStatus, BookingStatus>> = {
-  pending: "confirmed",
-  confirmed: "completed",
-  in_progress: "completed",
-};
-const NEXT_LABEL: Partial<Record<BookingStatus, string>> = {
-  pending: "Confirmar",
-  confirmed: "Completar",
-  in_progress: "Completar",
-};
+import { BookingRow } from "@/components/bookings/BookingRow";
+import { EditBookingModal } from "@/components/bookings/EditBookingModal";
+import {
+  type Assignment,
+  type Booking,
+  type Client,
+  type Employee,
+  type Service,
+  NEXT_STATUS,
+  addMinutes,
+  capitalizeFirst,
+  one,
+  timeToMinutes,
+} from "@/components/bookings/types";
 
 export function BookingsClient({
   businessId,
@@ -206,87 +144,26 @@ export function BookingsClient({
           />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
-            {filtered.map((booking) => {
-              const client = one(booking.clients);
-              const service = one(booking.services);
-              const employee = one(booking.business_members);
-              const next = NEXT_STATUS[booking.status];
-              const editable = booking.status !== "completed" && booking.status !== "cancelled";
-              const menuOpen = openActionsFor === booking.id;
-              return (
-                <div key={booking.id} className="relative px-5 py-4">
-                  {editable && (
-                    <div className="absolute right-3 top-3">
-                      <button
-                        type="button"
-                        onClick={() => setOpenActionsFor(menuOpen ? null : booking.id)}
-                        aria-label="Más acciones"
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-ink-500)] hover:bg-[var(--color-canvas)]"
-                      >
-                        <DotsIcon className="h-5 w-5" />
-                      </button>
-                      {menuOpen && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={() => setOpenActionsFor(null)} />
-                          <div className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-popover)]">
-                            {next && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  advanceStatus(booking);
-                                  setOpenActionsFor(null);
-                                }}
-                                className="block w-full px-4 py-2 text-left text-sm text-[var(--color-info)] hover:bg-[var(--color-canvas)]"
-                              >
-                                {NEXT_LABEL[booking.status]}
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setToEdit(booking);
-                                setOpenActionsFor(null);
-                              }}
-                              className="block w-full px-4 py-2 text-left text-sm text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setToCancel(booking);
-                                setOpenActionsFor(null);
-                              }}
-                              className="block w-full px-4 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--color-canvas)]"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  <div className={cn("min-w-0", editable ? "pr-10" : "")}>
-                    <p className="whitespace-nowrap text-sm font-medium text-[var(--color-ink-700)]">
-                      {new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="truncate text-sm font-medium text-[var(--color-ink-900)]">
-                        {client?.first_name} {client?.last_name ?? ""}
-                      </span>
-                      <BookingStatusBadge status={booking.status} />
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-500)]">
-                      <span className="max-w-full truncate">{service?.name}</span>
-                      <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                        <Avatar name={one(employee?.profiles)?.full_name ?? ""} src={one(employee?.employee_details)?.photo_url} size={20} />
-                        <span className="truncate">{one(employee?.profiles)?.full_name}</span>
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+            {filtered.map((booking) => (
+              <BookingRow
+                key={booking.id}
+                booking={booking}
+                menuOpen={openActionsFor === booking.id}
+                onToggleMenu={() => setOpenActionsFor((id) => (id === booking.id ? null : booking.id))}
+                onAdvance={(b) => {
+                  advanceStatus(b);
+                  setOpenActionsFor(null);
+                }}
+                onEdit={(b) => {
+                  setToEdit(b);
+                  setOpenActionsFor(null);
+                }}
+                onCancel={(b) => {
+                  setToCancel(b);
+                  setOpenActionsFor(null);
+                }}
+              />
+            ))}
           </div>
         )}
       </Card>
@@ -816,248 +693,3 @@ function NewBookingModal({
   );
 }
 
-function EditBookingModal({
-  booking,
-  onClose,
-  businessId,
-  employees,
-  assignments,
-  lockedEmployeeId,
-  onSaved,
-}: {
-  booking: Booking | null;
-  onClose: () => void;
-  businessId: string;
-  employees: Employee[];
-  assignments: Assignment[];
-  lockedEmployeeId?: string;
-  onSaved: (booking: Pick<Booking, "id" | "start_at" | "end_at" | "business_member_id" | "business_members">) => void;
-}) {
-  const service = one(booking?.services);
-  const [bookingDay, setBookingDay] = useState(booking ? booking.start_at.slice(0, 10) : "");
-  const [time, setTime] = useState(booking ? booking.start_at.slice(11, 16) : "");
-  const [employeeId, setEmployeeId] = useState(lockedEmployeeId ?? booking?.business_member_id ?? "");
-  const [employeeSlots, setEmployeeSlots] = useState<Record<string, string[]>>({});
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const [lastBookingId, setLastBookingId] = useState<string | null>(null);
-  if (booking && booking.id !== lastBookingId) {
-    setLastBookingId(booking.id);
-    setBookingDay(booking.start_at.slice(0, 10));
-    setTime(booking.start_at.slice(11, 16));
-    setEmployeeId(lockedEmployeeId ?? booking.business_member_id);
-    setError(null);
-  }
-
-  const eligibleEmployees = useMemo(() => {
-    if (!booking) return [];
-    const assignedIds = assignments.filter((a) => a.service_id === booking.service_id).map((a) => a.business_member_id);
-    const matched = employees.filter((e) => assignedIds.includes(e.id));
-    return matched.length > 0 ? matched : employees;
-  }, [booking, employees, assignments]);
-
-  useEffect(() => {
-    if (!booking || !service || eligibleEmployees.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale slots when inputs are incomplete
-      setEmployeeSlots({});
-      return;
-    }
-    let cancelled = false;
-    setLoadingSlots(true);
-    Promise.all(
-      eligibleEmployees.map(async (emp) => {
-        const slots = await getAvailableSlots(emp.id, bookingDay, service.duration_minutes);
-        const withCurrent = emp.id === booking.business_member_id && bookingDay === booking.start_at.slice(0, 10) ? Array.from(new Set([...slots, booking.start_at.slice(11, 16)])).sort() : slots;
-        return [emp.id, withCurrent] as const;
-      })
-    ).then((results) => {
-      if (cancelled) return;
-      setEmployeeSlots(Object.fromEntries(results));
-      setLoadingSlots(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [booking, service, bookingDay, eligibleEmployees]);
-
-  const candidateTimes = useMemo(() => {
-    const all = new Set<string>();
-    for (const emp of eligibleEmployees) {
-      for (const t of employeeSlots[emp.id] ?? []) all.add(t);
-    }
-    return Array.from(all).sort();
-  }, [employeeSlots, eligibleEmployees]);
-
-  function isEmployeeAvailable(employeeIdToCheck: string) {
-    return (employeeSlots[employeeIdToCheck] ?? []).includes(time);
-  }
-
-  function selectDay(d: string) {
-    setBookingDay(d);
-    setEmployeeId(lockedEmployeeId ?? "");
-    setTime("");
-  }
-
-  function selectTime(t: string) {
-    setTime(t);
-    setEmployeeId(lockedEmployeeId ?? "");
-  }
-
-  async function handleSubmit() {
-    if (!booking || !service) return;
-    setError(null);
-    if (!time) return setError("Elige el día y la hora.");
-    if (!employeeId) return setError("Selecciona un empleado disponible.");
-    if (!isEmployeeAvailable(employeeId)) return setError("Ese empleado no está disponible en ese horario.");
-
-    setLoading(true);
-    const supabase = createClient();
-    const startAt = bogotaDateTime(bookingDay, `${time}:00`);
-    const endAt = new Date(startAt.getTime() + service.duration_minutes * 60000);
-
-    const result = await supabase
-      .from("bookings")
-      .update({
-        business_member_id: employeeId,
-        start_at: startAt.toISOString(),
-        end_at: endAt.toISOString(),
-      })
-      .eq("id", booking.id)
-      .select("id, start_at, end_at, business_member_id")
-      .single();
-
-    setLoading(false);
-    if (result.error || !result.data) {
-      setError("No pudimos actualizar la reserva. Es posible que ese horario ya no esté disponible.");
-      return;
-    }
-    const employee = employees.find((e) => e.id === employeeId) ?? null;
-    onSaved({ ...result.data, business_members: employee });
-
-    if (employeeId !== lockedEmployeeId) {
-      const client = one(booking.clients);
-      const clientName = client ? `${client.first_name} ${client.last_name ?? ""}`.trim() : "un cliente";
-      await supabase.from("notifications").insert({
-        business_id: businessId,
-        business_member_id: employeeId,
-        title: "Reserva reprogramada",
-        body: `${service.name} con ${clientName} ahora es el ${bookingDay} a las ${formatTime12h(time)}.`,
-        link: "/reservas",
-      });
-    }
-  }
-
-  if (!booking) return null;
-  const client = one(booking.clients);
-
-  return (
-    <Modal
-      open={!!booking}
-      onClose={onClose}
-      title="Editar reserva"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Guardando…" : "Guardar cambios"}
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-5">
-        <div className="rounded-[var(--radius-md)] bg-[var(--color-canvas)] px-4 py-3 text-sm">
-          <p className="font-medium text-[var(--color-ink-900)]">
-            {client?.first_name} {client?.last_name ?? ""}
-          </p>
-          <p className="text-[var(--color-ink-500)]">{service?.name}</p>
-        </div>
-
-        <div>
-          <Label>Día</Label>
-          <WeekStrip
-            day={bookingDay}
-            onSelect={selectDay}
-            onShiftWeek={(direction) => {
-              const d = new Date(`${bookingDay}T00:00:00`);
-              d.setDate(d.getDate() + direction * 7);
-              selectDay(d.toISOString().slice(0, 10));
-            }}
-          />
-        </div>
-
-        <div>
-          <Label>Hora</Label>
-          {loadingSlots ? (
-            <p className="text-sm text-[var(--color-ink-500)]">Buscando horarios…</p>
-          ) : candidateTimes.length === 0 ? (
-            <p className="text-sm text-[var(--color-ink-500)]">Nadie tiene horario disponible ese día. Prueba otro día.</p>
-          ) : (
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-              {candidateTimes.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => selectTime(t)}
-                  className={cn(
-                    "rounded-[var(--radius-pill)] py-2 text-sm font-medium whitespace-nowrap transition-all",
-                    t === time
-                      ? "bg-[var(--color-ink-900)] text-white"
-                      : "bg-[var(--color-canvas)] text-[var(--color-ink-700)] hover:bg-[var(--color-border)]"
-                  )}
-                >
-                  {formatTime12h(t)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {!lockedEmployeeId && (
-          <div>
-            <Label>Empleado</Label>
-            {!time ? (
-              <p className="text-sm text-[var(--color-ink-500)]">Elige una hora para ver quién está disponible.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {eligibleEmployees.map((emp) => {
-                  const name = one(emp.profiles)?.full_name ?? "";
-                  const isAvailable = isEmployeeAvailable(emp.id);
-                  const selected = employeeId === emp.id;
-                  const disabled = !isAvailable;
-                  return (
-                    <button
-                      key={emp.id}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => setEmployeeId(emp.id)}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-4 py-2.5 text-left text-sm transition-all",
-                        selected
-                          ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
-                          : disabled
-                            ? "cursor-not-allowed border-[var(--color-border)] opacity-50"
-                            : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
-                      )}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Avatar name={name} src={one(emp.employee_details)?.photo_url} size={28} />
-                        <span className="font-medium text-[var(--color-ink-900)]">{name}</span>
-                      </span>
-                      <Badge tone={isAvailable ? "success" : "danger"}>{isAvailable ? "Disponible" : "No disponible"}</Badge>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        <FieldError>{error ?? undefined}</FieldError>
-      </div>
-    </Modal>
-  );
-}

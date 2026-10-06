@@ -1,12 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Avatar } from "@/components/ui/Avatar";
-import { BookingStatusBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { AccountPanel, type Payout } from "@/components/employees/AccountModal";
-import type { BookingStatus } from "@/lib/types/database";
 import { BOGOTA_TZ, bogotaDateTime, todayInBogota } from "@/lib/utils/dateRange";
+import { TodayAgendaClient } from "./TodayAgendaClient";
+import type { Booking } from "@/components/bookings/types";
 import Link from "next/link";
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
@@ -15,18 +14,6 @@ function one<T>(v: T | T[] | null | undefined): T | undefined {
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
-}
-
-interface TodayBookingRow {
-  id: string;
-  start_at: string;
-  status: BookingStatus;
-  clients: { first_name: string; last_name: string | null } | { first_name: string; last_name: string | null }[] | null;
-  services: { name: string } | { name: string }[] | null;
-  business_members:
-    | { id: string; profiles: { full_name: string } | { full_name: string }[] | null; employee_details: { photo_url: string | null } | { photo_url: string | null }[] | null }
-    | { id: string; profiles: { full_name: string } | { full_name: string }[] | null; employee_details: { photo_url: string | null } | { photo_url: string | null }[] | null }[]
-    | null;
 }
 
 interface UpcomingBookingRow {
@@ -94,10 +81,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
   const startOfDay = bogotaDateTime(todayKey, "00:00:00");
   const endOfDay = bogotaDateTime(todayKey, "23:59:59.999");
 
-  const [todayBookings, upcomingBookings, employeeCount, clientCount, serviceCount] = await Promise.all([
+  const [todayBookings, upcomingBookings, employeesData, servicesData, assignmentsData, employeeCount, clientCount, serviceCount] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id, start_at, status, clients(first_name, last_name), services(name), business_members(id, profiles(full_name), employee_details(photo_url))")
+      .select(
+        "id, start_at, end_at, status, notes, client_id, service_id, business_member_id, clients(id, first_name, last_name, phone), services(id, name, duration_minutes, price), business_members(id, profiles(full_name), employee_details(photo_url))"
+      )
       .eq("business_id", business.id)
       .gte("start_at", startOfDay.toISOString())
       .lte("start_at", endOfDay.toISOString())
@@ -112,6 +101,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
       .limit(5),
     supabase
       .from("business_members")
+      .select("id, profiles(full_name), employee_details(photo_url)")
+      .eq("business_id", business.id)
+      .eq("role", "employee")
+      .eq("status", "active"),
+    supabase.from("services").select("id, name, duration_minutes, price").eq("business_id", business.id).eq("is_active", true),
+    supabase.from("employee_services").select("business_member_id, service_id"),
+    supabase
+      .from("business_members")
       .select("id", { count: "exact", head: true })
       .eq("business_id", business.id)
       .eq("role", "employee")
@@ -120,7 +117,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
     supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("is_active", true),
   ]);
 
-  const today = (todayBookings.data ?? []) as unknown as TodayBookingRow[];
+  const today = (todayBookings.data ?? []) as unknown as Booking[];
   const upcoming = (upcomingBookings.data ?? []) as unknown as UpcomingBookingRow[];
   const completedToday = today.filter((b) => b.status === "completed").length;
 
@@ -167,41 +164,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
             Ver agenda completa
           </Link>
         </CardHeader>
-        {today.length === 0 ? (
-          <EmptyState title="Sin reservas hoy" description="Cuando agendes una reserva aparecerá aquí." />
-        ) : (
-          <div className="divide-y divide-[var(--color-border)]">
-            {today.map((b) => {
-              const client = Array.isArray(b.clients) ? b.clients[0] : b.clients;
-              const service = Array.isArray(b.services) ? b.services[0] : b.services;
-              const member = Array.isArray(b.business_members) ? b.business_members[0] : b.business_members;
-              const memberProfile = member && (Array.isArray(member.profiles) ? member.profiles[0] : member.profiles);
-              const memberDetails = member && (Array.isArray(member.employee_details) ? member.employee_details[0] : member.employee_details);
-              return (
-                <div key={b.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <div className="flex min-w-0 items-center gap-4">
-                    <span className="w-[4.5rem] shrink-0 whitespace-nowrap text-sm font-medium text-[var(--color-ink-700)]">{formatTime(b.start_at)}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[var(--color-ink-900)]">
-                        {client?.first_name} {client?.last_name ?? ""}
-                      </p>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-500)]">
-                        <span className="max-w-full truncate">{service?.name}</span>
-                        <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                          <Avatar name={memberProfile?.full_name ?? ""} src={memberDetails?.photo_url} size={18} />
-                          <span className="truncate">{memberProfile?.full_name}</span>
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="shrink-0 self-end sm:self-auto">
-                    <BookingStatusBadge status={b.status} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <TodayAgendaClient
+          businessId={business.id}
+          initialBookings={today}
+          employees={employeesData.data ?? []}
+          services={servicesData.data ?? []}
+          assignments={assignmentsData.data ?? []}
+        />
       </Card>
 
       <Card>
