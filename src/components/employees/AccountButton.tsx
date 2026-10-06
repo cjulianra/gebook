@@ -26,7 +26,7 @@ export function AccountButton({
   return (
     <>
       <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
-        Cuenta
+        Liquidar
         {balance > 0 && (
           <span className="ml-1.5 rounded-full bg-[var(--color-danger-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-danger)]">
             {currency.format(balance)}

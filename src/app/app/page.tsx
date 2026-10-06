@@ -25,5 +25,5 @@ export default async function AppIndexPage() {
     redirect(count && count > 0 ? "/portal" : "/onboarding/negocio");
   }
 
-  redirect(`/app/${first.businesses.slug}/dashboard`);
+  redirect(`/app/${first.businesses.slug}/reservas`);
 }

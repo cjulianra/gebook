@@ -97,13 +97,13 @@ export function AccountPanel({
             </div>
           </div>
           <FieldError>{error ?? undefined}</FieldError>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             {balance > 0 && (
-              <Button variant="secondary" size="sm" onClick={() => setAmount(String(balance))}>
+              <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => setAmount(String(balance))}>
                 Usar saldo completo ({currency.format(balance)})
               </Button>
             )}
-            <Button size="sm" onClick={handleRegister} disabled={loading}>
+            <Button size="sm" className="w-full sm:w-auto" onClick={handleRegister} disabled={loading}>
               {loading ? "Registrando…" : "Registrar pago"}
             </Button>
           </div>

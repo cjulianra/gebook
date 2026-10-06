@@ -348,7 +348,7 @@ const TABS = [
   { key: "horario", label: "Horario" },
   { key: "comision", label: "Comisión" },
   { key: "permisos", label: "Permisos" },
-  { key: "cuenta", label: "Cuenta" },
+  { key: "cuenta", label: "Liquidar" },
   { key: "desactivar", label: "Desactivar" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];

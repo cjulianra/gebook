@@ -83,11 +83,11 @@ export function BookingRow({
         {client?.first_name} {client?.last_name ?? ""}
       </p>
       <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-500)]">
-        <span className="max-w-full truncate">{service?.name}</span>
         <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
           <Avatar name={one(employee?.profiles)?.full_name ?? ""} src={one(employee?.employee_details)?.photo_url} size={20} />
           <span className="truncate">{one(employee?.profiles)?.full_name}</span>
         </span>
+        <span className="max-w-full truncate">{service?.name}</span>
       </p>
     </div>
   );

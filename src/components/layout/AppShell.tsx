@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 
 // En mobile solo caben unos pocos tabs abajo; el resto vive detrás del menú hamburguesa.
-const PRIMARY_MOBILE_HREFS = ["dashboard", "reservas", "reportes"];
+const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { business, membership, profile } = useBusiness();

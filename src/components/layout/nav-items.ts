@@ -8,7 +8,6 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Panel", href: "dashboard", roles: ["owner", "admin", "employee"], icon: "dashboard" },
   { label: "Agenda", href: "reservas", roles: ["owner", "admin", "employee"], icon: "agenda" },
   { label: "Servicios", href: "servicios", roles: ["owner", "admin"], icon: "services" },
   { label: "Empleados", href: "empleados", roles: ["owner", "admin"], icon: "employees" },

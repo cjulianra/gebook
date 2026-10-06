@@ -92,7 +92,7 @@ export default function OnboardingNegocioPage() {
       return;
     }
 
-    router.replace(`/app/${business.slug}/dashboard`);
+    router.replace(`/app/${business.slug}/reservas`);
     router.refresh();
   }
 

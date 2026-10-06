@@ -40,7 +40,7 @@ export default async function MiPerfilPage({
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!memberRaw) redirect(`/app/${slug}/dashboard`);
+  if (!memberRaw) redirect(`/app/${slug}/reservas`);
 
   const member = memberRaw as unknown as {
     id: string;

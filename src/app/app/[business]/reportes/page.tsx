@@ -92,7 +92,6 @@ export default async function ReportesPage({
   const netForBusiness = totalRevenue - totalCommission;
 
   const base = `/app/${slug}/reportes`;
-  const rangeQuery: Record<string, string> = sp.from && sp.to ? { from: sp.from, to: sp.to } : { preset: activePreset };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
@@ -148,7 +147,7 @@ export default async function ReportesPage({
                   {employeeRows.map((e) => (
                     <Link
                       key={e.id}
-                      href={`${base}/${e.id}?${new URLSearchParams(rangeQuery).toString()}`}
+                      href={`${base}/${e.id}`}
                       className="grid grid-cols-[1.6fr_0.8fr_1.2fr_0.8fr_1fr] items-center px-6 py-3 hover:bg-[var(--color-canvas)]"
                     >
                       <span className="flex items-center gap-2 font-medium text-[var(--color-ink-900)]">
@@ -170,7 +169,7 @@ export default async function ReportesPage({
               {employeeRows.map((e) => (
                 <Link
                   key={e.id}
-                  href={`${base}/${e.id}?${new URLSearchParams(rangeQuery).toString()}`}
+                  href={`${base}/${e.id}`}
                   className="block space-y-2 px-5 py-4 active:bg-[var(--color-canvas)]"
                 >
                   <div className="flex items-center justify-between">
