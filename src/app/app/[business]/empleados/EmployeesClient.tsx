@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
+import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
 import { cn } from "@/lib/utils/cn";
 import { inviteEmployee, removeEmployee } from "./actions";
 
@@ -34,14 +35,6 @@ interface Service {
 interface Assignment {
   business_member_id: string;
   service_id: string;
-}
-
-interface Schedule {
-  id: string;
-  business_member_id: string;
-  weekday: number;
-  start_time: string;
-  end_time: string;
 }
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
@@ -417,7 +410,7 @@ function EmployeeConfigModal({
         {tab === "servicios" && (
           <ServicesPanel member={member} services={services} assignedServiceIds={assignedServiceIds} onSaved={onServicesSaved} />
         )}
-        {tab === "horario" && <SchedulePanel member={member} schedules={schedules} onSaved={onScheduleSaved} />}
+        {tab === "horario" && <WeekSchedulePanel memberId={member.id} schedules={schedules} onSaved={onScheduleSaved} />}
         {tab === "comision" && <CommissionPanel member={member} onSaved={onCommissionSaved} />}
         {tab === "permisos" && <PermissionsPanel member={member} onSaved={onPermissionSaved} />}
         {tab === "cuenta" && (
@@ -482,91 +475,6 @@ function ServicesPanel({
       )}
       <Button size="sm" onClick={handleSave} disabled={loading}>
         {loading ? "Guardando…" : "Guardar servicios"}
-      </Button>
-    </div>
-  );
-}
-
-const WEEKDAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-
-function SchedulePanel({
-  member,
-  schedules,
-  onSaved,
-}: {
-  member: Member;
-  schedules: Schedule[];
-  onSaved: (schedules: Schedule[]) => void;
-}) {
-  const [rows, setRows] = useState(() =>
-    Array.from({ length: 7 }, (_, weekday) => {
-      const existing = schedules.find((s) => s.weekday === weekday);
-      return {
-        weekday,
-        enabled: !!existing,
-        start: existing?.start_time?.slice(0, 5) ?? "09:00",
-        end: existing?.end_time?.slice(0, 5) ?? "18:00",
-      };
-    })
-  );
-  const [loading, setLoading] = useState(false);
-
-  function updateRow(weekday: number, patch: Partial<{ enabled: boolean; start: string; end: string }>) {
-    setRows((prev) => prev.map((r) => (r.weekday === weekday ? { ...r, ...patch } : r)));
-  }
-
-  async function handleSave() {
-    setLoading(true);
-    const supabase = createClient();
-    await supabase.from("work_schedules").delete().eq("business_member_id", member.id);
-
-    const toInsert = rows
-      .filter((r) => r.enabled)
-      .map((r) => ({ business_member_id: member.id, weekday: r.weekday, start_time: r.start, end_time: r.end }));
-
-    let saved: Schedule[] = [];
-    if (toInsert.length > 0) {
-      const { data } = await supabase.from("work_schedules").insert(toInsert).select();
-      saved = data ?? [];
-    }
-    setLoading(false);
-    onSaved(saved);
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        {rows.map((row) => (
-          <div key={row.weekday} className="flex items-center gap-3">
-            <label className="flex w-32 shrink-0 items-center gap-2">
-              <input
-                type="checkbox"
-                checked={row.enabled}
-                onChange={(e) => updateRow(row.weekday, { enabled: e.target.checked })}
-                className="h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
-              />
-              <span className="text-sm text-[var(--color-ink-900)]">{WEEKDAYS[row.weekday]}</span>
-            </label>
-            <input
-              type="time"
-              value={row.start}
-              disabled={!row.enabled}
-              onChange={(e) => updateRow(row.weekday, { start: e.target.value })}
-              className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
-            />
-            <span className="text-[var(--color-ink-400)]">–</span>
-            <input
-              type="time"
-              value={row.end}
-              disabled={!row.enabled}
-              onChange={(e) => updateRow(row.weekday, { end: e.target.value })}
-              className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
-            />
-          </div>
-        ))}
-      </div>
-      <Button size="sm" onClick={handleSave} disabled={loading}>
-        {loading ? "Guardando…" : "Guardar horario"}
       </Button>
     </div>
   );

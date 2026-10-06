@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
+import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
 import { BOGOTA_TZ } from "@/lib/utils/dateRange";
@@ -36,6 +37,7 @@ export function MiPerfilClient(props: {
   initialPayouts: Payout[];
   activePreset: string | null;
   periodServices: PeriodService[];
+  initialSchedules: Schedule[];
 }) {
   return (
     <ToastProvider>
@@ -56,6 +58,7 @@ function Inner({
   initialPayouts,
   activePreset,
   periodServices,
+  initialSchedules,
 }: {
   businessId: string;
   memberId: string;
@@ -68,6 +71,7 @@ function Inner({
   initialPayouts: Payout[];
   activePreset: string | null;
   periodServices: PeriodService[];
+  initialSchedules: Schedule[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -75,6 +79,7 @@ function Inner({
   const [photo, setPhoto] = useState(photoUrl);
   const [uploading, setUploading] = useState(false);
   const [payouts] = useState(initialPayouts);
+  const [schedules, setSchedules] = useState(initialSchedules);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -237,6 +242,25 @@ function Inner({
             </div>
           </>
         )}
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Mi horario</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <p className="mb-4 text-sm text-[var(--color-ink-500)]">
+            Marca los días que trabajas y tu horario. Si un día no puedes venir, desmárcalo — no te llegarán reservas nuevas ese día.
+          </p>
+          <WeekSchedulePanel
+            memberId={memberId}
+            schedules={schedules}
+            onSaved={(saved) => {
+              setSchedules(saved);
+              showToast("Horario actualizado.");
+            }}
+          />
+        </CardBody>
       </Card>
 
       <Card>

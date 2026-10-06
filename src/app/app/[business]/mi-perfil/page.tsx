@@ -62,7 +62,7 @@ export default async function MiPerfilPage({
   const startOfRange = bogotaDateTime(from, "00:00:00");
   const endOfRange = bogotaDateTime(to, "23:59:59.999");
 
-  const [{ data: allTimeBookings }, { data: payouts }, { data: periodBookingsRaw }] = await Promise.all([
+  const [{ data: allTimeBookings }, { data: payouts }, { data: periodBookingsRaw }, { data: schedules }] = await Promise.all([
     supabase.from("bookings").select("services(price)").eq("business_id", business.id).eq("business_member_id", member.id).eq("status", "completed"),
     supabase
       .from("employee_payouts")
@@ -79,6 +79,7 @@ export default async function MiPerfilPage({
       .gte("start_at", startOfRange.toISOString())
       .lte("start_at", endOfRange.toISOString())
       .order("start_at", { ascending: false }),
+    supabase.from("work_schedules").select("id, business_member_id, weekday, start_time, end_time").eq("business_member_id", member.id),
   ]);
 
   const revenue = ((allTimeBookings ?? []) as unknown as { services: { price: number } | { price: number }[] | null }[]).reduce(
@@ -115,6 +116,7 @@ export default async function MiPerfilPage({
       initialPayouts={payouts ?? []}
       activePreset={sp.from ? null : activePreset}
       periodServices={periodServices}
+      initialSchedules={schedules ?? []}
     />
   );
 }

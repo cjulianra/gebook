@@ -32,6 +32,8 @@ export function BookingRow({
       <div className="flex items-center justify-between gap-3">
         <p className="whitespace-nowrap text-sm font-bold text-[var(--color-ink-900)]">
           {new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
+          {" – "}
+          {new Date(booking.end_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <BookingStatusBadge status={booking.status} />

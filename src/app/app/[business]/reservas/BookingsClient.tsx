@@ -32,6 +32,8 @@ import {
   timeToMinutes,
 } from "@/components/bookings/types";
 
+const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+
 export function BookingsClient({
   businessId,
   day,
@@ -50,7 +52,7 @@ export function BookingsClient({
   assignments: Assignment[];
 }) {
   const router = useRouter();
-  const { membership } = useBusiness();
+  const { membership, profile } = useBusiness();
   const isEmployee = membership.role === "employee";
   const [bookings, setBookings] = useState(initialBookings);
   const [clients, setClients] = useState(initialClients);
@@ -110,8 +112,8 @@ export function BookingsClient({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title={isEmployee ? "Mi agenda" : "Agenda"}
-        description={isEmployee ? "Tus reservas, día a día." : "Las reservas de tu negocio, día a día."}
+        title={isEmployee ? profile.full_name : "Agenda"}
+        description={isEmployee ? "Tu agenda, día a día." : "Las reservas de tu negocio, día a día."}
         action={membership.canCreateBookings ? <Button onClick={() => setModalOpen(true)}>Nueva reserva</Button> : undefined}
       />
 
@@ -359,22 +361,19 @@ function NewBookingModal({
     return times;
   }, [candidateTimes]);
 
-  function updateLineService(index: number, serviceId: string) {
-    setLines((prev) => prev.map((l, i) => (i === index ? { serviceId, employeeId: lockedEmployeeId ?? "" } : l)));
-    if (index === 0) setTime("");
+  function toggleService(serviceId: string) {
+    setLines((prev) => {
+      const next = prev.some((l) => l.serviceId === serviceId)
+        ? prev.filter((l) => l.serviceId !== serviceId)
+        : [...prev, { serviceId, employeeId: lockedEmployeeId ?? "" }];
+      // mantener el orden del catálogo para que el encadenado de horarios sea predecible
+      return services.filter((s) => next.some((l) => l.serviceId === s.id)).map((s) => next.find((l) => l.serviceId === s.id)!);
+    });
+    setTime("");
   }
 
-  function updateLineEmployee(index: number, employeeId: string) {
-    setLines((prev) => prev.map((l, i) => (i === index ? { ...l, employeeId } : l)));
-  }
-
-  function addLine() {
-    const unused = services.find((s) => !lines.some((l) => l.serviceId === s.id));
-    setLines((prev) => [...prev, { serviceId: unused?.id ?? services[0]?.id ?? "", employeeId: lockedEmployeeId ?? "" }]);
-  }
-
-  function removeLine(index: number) {
-    setLines((prev) => prev.filter((_, i) => i !== index));
+  function updateLineEmployee(serviceId: string, employeeId: string) {
+    setLines((prev) => prev.map((l) => (l.serviceId === serviceId ? { ...l, employeeId } : l)));
   }
 
   function selectDay(d: string) {
@@ -560,41 +559,43 @@ function NewBookingModal({
           )}
         </div>
 
-        {/* Servicios */}
+        {/* Servicios: lista completamente visible (no desplegable) — cada uno
+            muestra su duración y precio, y se pueden marcar varios. */}
         <div>
           <Label>Servicios</Label>
-          <div className="space-y-2">
-            {lines.map((line, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Select value={line.serviceId} onChange={(e) => updateLineService(index, e.target.value)} className="flex-1">
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} · {s.duration_minutes} min
-                    </option>
-                  ))}
-                </Select>
-                {lines.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeLine(index)}
-                    aria-label="Quitar servicio"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-ink-500)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-danger)]"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
+          <div className="max-h-72 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
+            {services.map((s) => {
+              const selected = lines.some((l) => l.serviceId === s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => toggleService(s.id)}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-all",
+                    selected
+                      ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
+                      : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+                  )}
+                >
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <span
+                      className={cn(
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
+                        selected ? "border-transparent bg-[var(--color-ink-900)] text-white" : "border-[var(--color-border-strong)]"
+                      )}
+                    >
+                      {selected && "✓"}
+                    </span>
+                    <span className="truncate font-medium">{s.name}</span>
+                  </span>
+                  <span className="shrink-0 whitespace-nowrap text-xs opacity-80">
+                    {s.duration_minutes} min · {currency.format(s.price)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          {lines.length < services.length && (
-            <button
-              type="button"
-              onClick={addLine}
-              className="mt-2 text-sm font-medium text-[var(--color-accent)] hover:underline"
-            >
-              + Agregar otro servicio
-            </button>
-          )}
         </div>
 
         {/* Día */}
@@ -672,7 +673,7 @@ function NewBookingModal({
                           key={emp.id}
                           type="button"
                           disabled={disabled}
-                          onClick={() => updateLineEmployee(index, emp.id)}
+                          onClick={() => updateLineEmployee(entry.serviceId, emp.id)}
                           className={cn(
                             "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-4 py-2.5 text-left text-sm transition-all",
                             selected
