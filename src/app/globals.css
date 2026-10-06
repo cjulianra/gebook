@@ -93,6 +93,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* En móvil el texto pequeño (text-xs/text-sm) se siente apretado — se sube
+   un poco. Al redefinir las variables del theme de Tailwind en vez de tocar
+   cada componente, el ajuste aplica a toda la app sin afectar paddings,
+   alturas ni otros tamaños de espaciado. */
+@media (max-width: 767px) {
+  :root {
+    --text-xs: 0.8125rem;
+    --text-sm: 0.9375rem;
+  }
+}
+
 * {
   border-color: var(--color-border);
 }

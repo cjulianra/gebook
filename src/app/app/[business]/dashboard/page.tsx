@@ -178,21 +178,25 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
               const memberProfile = member && (Array.isArray(member.profiles) ? member.profiles[0] : member.profiles);
               const memberDetails = member && (Array.isArray(member.employee_details) ? member.employee_details[0] : member.employee_details);
               return (
-                <div key={b.id} className="flex items-center justify-between gap-4 px-5 py-3">
-                  <div className="flex items-center gap-4">
+                <div key={b.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <div className="flex min-w-0 items-center gap-4">
                     <span className="w-[4.5rem] shrink-0 whitespace-nowrap text-sm font-medium text-[var(--color-ink-700)]">{formatTime(b.start_at)}</span>
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-ink-900)]">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[var(--color-ink-900)]">
                         {client?.first_name} {client?.last_name ?? ""}
                       </p>
-                      <p className="flex items-center gap-1.5 text-xs text-[var(--color-ink-500)]">
-                        {service?.name} ·
-                        <Avatar name={memberProfile?.full_name ?? ""} src={memberDetails?.photo_url} size={16} />
-                        {memberProfile?.full_name}
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-500)]">
+                        <span className="max-w-full truncate">{service?.name}</span>
+                        <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                          <Avatar name={memberProfile?.full_name ?? ""} src={memberDetails?.photo_url} size={18} />
+                          <span className="truncate">{memberProfile?.full_name}</span>
+                        </span>
                       </p>
                     </div>
                   </div>
-                  <BookingStatusBadge status={b.status} />
+                  <div className="shrink-0 self-end sm:self-auto">
+                    <BookingStatusBadge status={b.status} />
+                  </div>
                 </div>
               );
             })}
@@ -213,11 +217,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
               const service = Array.isArray(b.services) ? b.services[0] : b.services;
               return (
                 <div key={b.id} className="flex items-center justify-between gap-4 px-5 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--color-ink-900)]">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-[var(--color-ink-900)]">
                       {client?.first_name} {client?.last_name ?? ""}
                     </p>
-                    <p className="text-xs text-[var(--color-ink-500)]">{service?.name}</p>
+                    <p className="truncate text-xs text-[var(--color-ink-500)]">{service?.name}</p>
                   </div>
                   <p className="shrink-0 whitespace-nowrap text-xs text-[var(--color-ink-500)]">
                     {new Date(b.start_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })} · {formatTime(b.start_at)}

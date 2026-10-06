@@ -38,6 +38,16 @@ function timeToMinutes(hhmm: string) {
   return h * 60 + m;
 }
 
+function DotsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
+    </svg>
+  );
+}
+
 interface Employee {
   id: string;
   profiles: { full_name: string } | { full_name: string }[] | null;
@@ -115,6 +125,7 @@ export function BookingsClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [toCancel, setToCancel] = useState<Booking | null>(null);
   const [toEdit, setToEdit] = useState<Booking | null>(null);
+  const [openActionsFor, setOpenActionsFor] = useState<string | null>(null);
   const showToast = useToast();
 
   function goToDay(newDay: string) {
@@ -200,41 +211,79 @@ export function BookingsClient({
               const service = one(booking.services);
               const employee = one(booking.business_members);
               const next = NEXT_STATUS[booking.status];
+              const editable = booking.status !== "completed" && booking.status !== "cancelled";
+              const menuOpen = openActionsFor === booking.id;
               return (
-                <div key={booking.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                  <div className="flex items-center gap-4">
+                <div key={booking.id} className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="flex min-w-0 items-center gap-4">
                     <span className="w-[4.5rem] shrink-0 whitespace-nowrap text-sm font-medium text-[var(--color-ink-700)]">
                       {new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
                     </span>
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-ink-900)]">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[var(--color-ink-900)]">
                         {client?.first_name} {client?.last_name ?? ""}
                       </p>
-                      <p className="mt-0.5 flex items-center gap-2 text-xs text-[var(--color-ink-500)]">
-                        {service?.name} ·
-                        <Avatar name={one(employee?.profiles)?.full_name ?? ""} src={one(employee?.employee_details)?.photo_url} size={24} />
-                        {one(employee?.profiles)?.full_name}
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-500)]">
+                        <span className="max-w-full truncate">{service?.name}</span>
+                        <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                          <Avatar name={one(employee?.profiles)?.full_name ?? ""} src={one(employee?.employee_details)?.photo_url} size={20} />
+                          <span className="truncate">{one(employee?.profiles)?.full_name}</span>
+                        </span>
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {next && (
-                        <Button size="xs" variant="info-soft" onClick={() => advanceStatus(booking)}>
-                          {NEXT_LABEL[booking.status]}
-                        </Button>
-                      )}
-                      {booking.status !== "completed" && booking.status !== "cancelled" && (
-                        <Button size="xs" variant="neutral-soft" onClick={() => setToEdit(booking)}>
-                          Editar
-                        </Button>
-                      )}
-                      {booking.status !== "completed" && booking.status !== "cancelled" && (
-                        <Button size="xs" variant="danger-soft" onClick={() => setToCancel(booking)}>
-                          Cancelar
-                        </Button>
-                      )}
-                    </div>
+                  <div className="flex shrink-0 items-center justify-end gap-3">
+                    {editable && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenActionsFor(menuOpen ? null : booking.id)}
+                          aria-label="Más acciones"
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-ink-500)] hover:bg-[var(--color-canvas)]"
+                        >
+                          <DotsIcon className="h-5 w-5" />
+                        </button>
+                        {menuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenActionsFor(null)} />
+                            <div className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-popover)]">
+                              {next && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    advanceStatus(booking);
+                                    setOpenActionsFor(null);
+                                  }}
+                                  className="block w-full px-4 py-2 text-left text-sm text-[var(--color-info)] hover:bg-[var(--color-canvas)]"
+                                >
+                                  {NEXT_LABEL[booking.status]}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setToEdit(booking);
+                                  setOpenActionsFor(null);
+                                }}
+                                className="block w-full px-4 py-2 text-left text-sm text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setToCancel(booking);
+                                  setOpenActionsFor(null);
+                                }}
+                                className="block w-full px-4 py-2 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--color-canvas)]"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <div className="h-6 w-px shrink-0 bg-[var(--color-border)]" />
                     <div className="w-[6.5rem] shrink-0 text-right">
                       <BookingStatusBadge status={booking.status} />
