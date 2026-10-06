@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Input, Label, FieldError } from "@/components/ui/Input";
+import { Input, Label, Select, FieldError } from "@/components/ui/Input";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
+import { CITIES, NEIGHBORHOODS_BY_CITY } from "@/lib/data/santanderLocations";
 
 type Business = Database["public"]["Tables"]["businesses"]["Row"];
 
@@ -28,8 +29,29 @@ function Inner({ business }: { business: Business }) {
   const [name, setName] = useState(business.name);
   const [phone, setPhone] = useState(business.phone ?? "");
   const [address, setAddress] = useState(business.address ?? "");
+  const [city, setCity] = useState(business.city ?? "");
+  const [neighborhood, setNeighborhood] = useState(business.neighborhood ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- window solo existe en el cliente; se llena después del primer render para evitar un mismatch de hidratación
+    setOrigin(window.location.origin);
+  }, []);
+
+  const publicUrl = origin ? `${origin}/${business.slug}` : `/${business.slug}`;
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast("No pudimos copiar el link. Selecciónalo y cópialo manualmente.", "danger");
+    }
+  }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -78,7 +100,13 @@ function Inner({ business }: { business: Business }) {
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("businesses")
-      .update({ name: name.trim(), phone: phone.trim() || null, address: address.trim() || null })
+      .update({
+        name: name.trim(),
+        phone: phone.trim() || null,
+        address: address.trim() || null,
+        city: city || null,
+        neighborhood: neighborhood || null,
+      })
       .eq("id", business.id);
 
     setSaving(false);
@@ -92,6 +120,25 @@ function Inner({ business }: { business: Business }) {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
       <PageHeader title="Configuración" description="La información pública de tu negocio." />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Link público de reservas</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <p className="mb-3 text-sm text-[var(--color-ink-500)]">
+            Comparte este link con tus clientes para que agenden directamente.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex-1 overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-canvas)] px-4 py-2.5 text-sm font-medium text-[var(--color-ink-900)] whitespace-nowrap">
+              {publicUrl}
+            </div>
+            <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={handleCopy}>
+              {copied ? "¡Copiado!" : "Copiar link"}
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -135,6 +182,43 @@ function Inner({ business }: { business: Business }) {
             <div>
               <Label htmlFor="address">Dirección</Label>
               <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">Ciudad</Label>
+                <Select
+                  id="city"
+                  value={city}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    setNeighborhood("");
+                  }}
+                >
+                  <option value="">Selecciona una ciudad</option>
+                  {CITIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="neighborhood">Barrio</Label>
+                <Select
+                  id="neighborhood"
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  disabled={!city}
+                >
+                  <option value="">{city ? "Selecciona un barrio" : "Elige una ciudad primero"}</option>
+                  {city &&
+                    NEIGHBORHOODS_BY_CITY[city as keyof typeof NEIGHBORHOODS_BY_CITY]?.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                </Select>
+              </div>
             </div>
             <FieldError>{error ?? undefined}</FieldError>
             <Button type="submit" disabled={saving}>

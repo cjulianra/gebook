@@ -23,6 +23,8 @@ type BusinessRow = {
   business_type: string | null;
   phone: string | null;
   address: string | null;
+  city: string | null;
+  neighborhood: string | null;
   timezone: string;
   logo_url: string | null;
   is_active: boolean;
