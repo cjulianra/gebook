@@ -6,7 +6,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/utils/cn";
-import { presetRange } from "@/lib/utils/dateRange";
+import { bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -49,8 +49,8 @@ export default async function ReportesPage({
   const activePreset = sp.preset ?? "mes";
   const { from, to } = sp.from && sp.to ? { from: sp.from, to: sp.to } : presetRange(activePreset);
 
-  const startOfRange = new Date(`${from}T00:00:00`);
-  const endOfRange = new Date(`${to}T23:59:59.999`);
+  const startOfRange = bogotaDateTime(from, "00:00:00");
+  const endOfRange = bogotaDateTime(to, "23:59:59.999");
 
   const { data: bookings } = await supabase
     .from("bookings")

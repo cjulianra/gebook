@@ -6,6 +6,7 @@ import { BookingStatusBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { AccountPanel, type Payout } from "@/components/employees/AccountModal";
 import type { BookingStatus } from "@/lib/types/database";
+import { BOGOTA_TZ, bogotaDateTime, todayInBogota } from "@/lib/utils/dateRange";
 import Link from "next/link";
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
@@ -13,7 +14,7 @@ function one<T>(v: T | T[] | null | undefined): T | undefined {
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
 }
 
 interface TodayBookingRow {
@@ -89,10 +90,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
     myAccount = { memberId: myMembership.id, earned: (revenue * rate) / 100, payouts: myPayouts ?? [] };
   }
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const todayKey = todayInBogota();
+  const startOfDay = bogotaDateTime(todayKey, "00:00:00");
+  const endOfDay = bogotaDateTime(todayKey, "23:59:59.999");
 
   const [todayBookings, upcomingBookings, employeeCount, clientCount, serviceCount] = await Promise.all([
     supabase
@@ -131,7 +131,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
           Hola{myProfile?.full_name ? `, ${myProfile.full_name.split(" ")[0]}` : ""} 👋
         </h1>
         <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}
+          {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })}
         </p>
       </div>
 
@@ -220,7 +220,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
                     <p className="text-xs text-[var(--color-ink-500)]">{service?.name}</p>
                   </div>
                   <p className="shrink-0 whitespace-nowrap text-xs text-[var(--color-ink-500)]">
-                    {new Date(b.start_at).toLocaleDateString("es-CO", { day: "numeric", month: "short" })} · {formatTime(b.start_at)}
+                    {new Date(b.start_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })} · {formatTime(b.start_at)}
                   </p>
                 </div>
               );

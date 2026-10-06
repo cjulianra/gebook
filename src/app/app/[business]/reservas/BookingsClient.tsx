@@ -16,7 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { WeekStrip } from "@/components/ui/WeekStrip";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { cn } from "@/lib/utils/cn";
-import { formatTime12h } from "@/lib/utils/dateRange";
+import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { getAvailableSlots } from "@/app/[slug]/actions";
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
@@ -150,7 +150,7 @@ export function BookingsClient({
     showToast("Reserva cancelada.");
   }
 
-  const isToday = day === new Date().toISOString().slice(0, 10);
+  const isToday = day === todayInBogota();
 
   function shiftWeek(direction: -1 | 1) {
     const d = new Date(`${day}T00:00:00`);
@@ -170,7 +170,7 @@ export function BookingsClient({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-base font-bold text-[var(--color-ink-900)]">
-          {capitalizeFirst(new Date(`${day}T00:00:00`).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }))}
+          {capitalizeFirst(bogotaDateTime(day, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ }))}
           {isToday && <span className="ml-1.5 font-normal text-[var(--color-ink-500)]">(hoy)</span>}
         </p>
 
@@ -204,7 +204,7 @@ export function BookingsClient({
                 <div key={booking.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                   <div className="flex items-center gap-4">
                     <span className="w-[4.5rem] shrink-0 whitespace-nowrap text-sm font-medium text-[var(--color-ink-700)]">
-                      {new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" })}
+                      {new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
                     </span>
                     <div>
                       <p className="text-sm font-medium text-[var(--color-ink-900)]">
@@ -508,8 +508,8 @@ function NewBookingModal({
 
     const employeeSummary = new Map<string, string[]>();
     for (const entry of schedule) {
-      const startAt = new Date(`${bookingDay}T${entry.start}:00`);
-      const endAt = new Date(`${bookingDay}T${entry.end}:00`);
+      const startAt = bogotaDateTime(bookingDay, `${entry.start}:00`);
+      const endAt = bogotaDateTime(bookingDay, `${entry.end}:00`);
 
       const result = await supabase
         .from("bookings")
@@ -870,7 +870,7 @@ function EditBookingModal({
 
     setLoading(true);
     const supabase = createClient();
-    const startAt = new Date(`${bookingDay}T${time}:00`);
+    const startAt = bogotaDateTime(bookingDay, `${time}:00`);
     const endAt = new Date(startAt.getTime() + service.duration_minutes * 60000);
 
     const result = await supabase

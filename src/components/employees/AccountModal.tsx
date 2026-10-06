@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, FieldError } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { BOGOTA_TZ, bogotaDateTime, todayInBogota } from "@/lib/utils/dateRange";
 
 export const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -52,7 +53,7 @@ export function AccountPanel({
     const supabase = createClient();
     const { data, error: insertError } = await supabase
       .from("employee_payouts")
-      .insert({ business_id: businessId, business_member_id: memberId, amount: value, note: note.trim() || null })
+      .insert({ business_id: businessId, business_member_id: memberId, amount: value, note: note.trim() || null, paid_at: todayInBogota() })
       .select()
       .single();
     setLoading(false);
@@ -122,7 +123,7 @@ export function AccountPanel({
                   {p.note && <p className="truncate text-xs text-[var(--color-ink-500)]">{p.note}</p>}
                 </div>
                 <span className="shrink-0 whitespace-nowrap text-xs text-[var(--color-ink-500)]">
-                  {new Date(`${p.paid_at}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}
+                  {bogotaDateTime(p.paid_at, "00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric", timeZone: BOGOTA_TZ })}
                 </span>
               </div>
             ))}

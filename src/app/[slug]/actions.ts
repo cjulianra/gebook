@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { bogotaDateTime, weekdayOf } from "@/lib/utils/dateRange";
 
 const SLOT_STEP_MINUTES = 30;
 const DEFAULT_WINDOW = { start_time: "09:00", end_time: "19:00" };
@@ -22,7 +23,7 @@ function timeToMinutes(hhmm: string) {
 
 async function computeFreeSlots(businessMemberId: string, day: string, durationMinutes: number) {
   const supabase = await createClient();
-  const weekday = new Date(`${day}T00:00:00`).getDay();
+  const weekday = weekdayOf(day);
 
   const [{ data: schedules }, { data: busy }] = await Promise.all([
     supabase.from("work_schedules").select("start_time, end_time").eq("business_member_id", businessMemberId).eq("weekday", weekday),
@@ -42,7 +43,7 @@ async function computeFreeSlots(businessMemberId: string, day: string, durationM
     for (let m = startMin; m + durationMinutes <= endMin; m += SLOT_STEP_MINUTES) {
       const hh = String(Math.floor(m / 60)).padStart(2, "0");
       const mm = String(m % 60).padStart(2, "0");
-      const candidateStart = new Date(`${day}T${hh}:${mm}:00`);
+      const candidateStart = bogotaDateTime(day, `${hh}:${mm}:00`);
       const candidateEnd = new Date(candidateStart.getTime() + durationMinutes * 60000);
 
       if (candidateStart < now) continue;
@@ -112,7 +113,7 @@ export async function confirmBooking(input: ConfirmBookingInput) {
     clientRow = created;
   }
 
-  const startAt = new Date(`${input.day}T${input.time}:00`);
+  const startAt = bogotaDateTime(input.day, `${input.time}:00`);
   const endAt = new Date(startAt.getTime() + input.durationMinutes * 60000);
 
   const { error: bookingError } = await admin.from("bookings").insert({

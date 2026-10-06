@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/States";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
+import { BOGOTA_TZ } from "@/lib/utils/dateRange";
 
 interface PeriodService {
   id: string;
@@ -202,8 +203,8 @@ function Inner({
                     const date = new Date(d.start_at);
                     return (
                       <tr key={d.id}>
-                        <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">{date.toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</td>
-                        <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">{date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" })}</td>
+                        <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">{date.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })}</td>
+                        <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">{date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}</td>
                         <td className="px-6 py-3 font-medium text-[var(--color-ink-900)]">{d.clientName}</td>
                         <td className="px-6 py-3 text-[var(--color-ink-700)]">{d.serviceName}</td>
                         <td className="px-6 py-3 text-[var(--color-ink-700)]">{currency.format(d.price)}</td>
@@ -222,7 +223,7 @@ function Inner({
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-[var(--color-ink-900)]">{d.clientName}</p>
                       <span className="shrink-0 whitespace-nowrap text-xs text-[var(--color-ink-500)]">
-                        {date.toLocaleDateString("es-CO", { day: "numeric", month: "short" })} · {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" })}
+                        {date.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })} · {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">

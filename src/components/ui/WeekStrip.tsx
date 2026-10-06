@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
+import { todayInBogota } from "@/lib/utils/dateRange";
 
 const WEEKDAY_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MONTH_LABEL = [
@@ -32,7 +33,7 @@ export function WeekStrip({
     return d;
   });
 
-  const todayKey = toKey(new Date());
+  const todayKey = todayInBogota();
 
   return (
     <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)]">

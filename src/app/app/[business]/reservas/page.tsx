@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
+import { bogotaDateTime, todayInBogota } from "@/lib/utils/dateRange";
 import { BookingsClient } from "./BookingsClient";
 
 export default async function ReservasPage({
@@ -15,9 +16,9 @@ export default async function ReservasPage({
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
 
-  const day = date ?? new Date().toISOString().slice(0, 10);
-  const startOfDay = new Date(`${day}T00:00:00`);
-  const endOfDay = new Date(`${day}T23:59:59.999`);
+  const day = date ?? todayInBogota();
+  const startOfDay = bogotaDateTime(day, "00:00:00");
+  const endOfDay = bogotaDateTime(day, "23:59:59.999");
 
   const [{ data: bookings }, { data: employees }, { data: services }, { data: clients }, { data: assignments }] = await Promise.all([
     supabase

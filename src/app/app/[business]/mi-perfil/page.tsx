@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
-import { presetRange } from "@/lib/utils/dateRange";
+import { bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
 import { MiPerfilClient } from "./MiPerfilClient";
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
@@ -56,8 +56,8 @@ export default async function MiPerfilPage({
 
   const activePreset = sp.preset ?? "hoy";
   const { from, to } = sp.from && sp.to ? { from: sp.from, to: sp.to } : presetRange(activePreset);
-  const startOfRange = new Date(`${from}T00:00:00`);
-  const endOfRange = new Date(`${to}T23:59:59.999`);
+  const startOfRange = bogotaDateTime(from, "00:00:00");
+  const endOfRange = bogotaDateTime(to, "23:59:59.999");
 
   const [{ data: allTimeBookings }, { data: payouts }, { data: periodBookingsRaw }] = await Promise.all([
     supabase.from("bookings").select("services(price)").eq("business_id", business.id).eq("business_member_id", member.id).eq("status", "completed"),

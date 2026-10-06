@@ -12,7 +12,7 @@ import { WeekStrip } from "@/components/ui/WeekStrip";
 import { EmptyState } from "@/components/ui/States";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
-import { formatTime12h } from "@/lib/utils/dateRange";
+import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { getAvailableSlots, confirmBooking } from "./actions";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -64,7 +64,7 @@ export function BookingWidget(props: {
 }
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return todayInBogota();
 }
 
 function BookingWidgetInner({ business, services, employees, assignments }: {
@@ -186,7 +186,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
               <p className="mt-1 text-sm text-[var(--color-ink-500)]">
                 {service.name} con {employee.full_name}
                 <br />
-                {new Date(`${day}T${time}:00`).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })} · {formatTime12h(time)}
+                {bogotaDateTime(day, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · {formatTime12h(time)}
               </p>
             </div>
             <Button onClick={() => router.push("/portal")} className="w-full">
@@ -469,7 +469,7 @@ function StepConfirmar({
         <Row label="Profesional" value={employee.full_name} onEdit={() => onEdit(2)} />
         <Row
           label="Fecha y hora"
-          value={`${new Date(`${day}T00:00:00`).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })} · ${formatTime12h(time)}`}
+          value={`${bogotaDateTime(day, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · ${formatTime12h(time)}`}
           onEdit={() => onEdit(3)}
         />
 

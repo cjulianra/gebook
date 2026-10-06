@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/States";
-import { presetRange } from "@/lib/utils/dateRange";
+import { BOGOTA_TZ, bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
 import { AccountButton } from "@/components/employees/AccountButton";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -37,8 +37,8 @@ export default async function EmployeeReportDetailPage({
 
   const activePreset = sp.preset ?? "mes";
   const { from, to } = sp.from && sp.to ? { from: sp.from, to: sp.to } : presetRange(activePreset);
-  const startOfRange = new Date(`${from}T00:00:00`);
-  const endOfRange = new Date(`${to}T23:59:59.999`);
+  const startOfRange = bogotaDateTime(from, "00:00:00");
+  const endOfRange = bogotaDateTime(to, "23:59:59.999");
 
   const { data: memberRaw } = await supabase
     .from("business_members")
@@ -160,10 +160,10 @@ export default async function EmployeeReportDetailPage({
                     return (
                       <tr key={d.id}>
                         <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">
-                          {date.toLocaleDateString("es-CO", { day: "numeric", month: "short" })}
+                          {date.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })}
                         </td>
                         <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">
-                          {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" })}
+                          {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
                         </td>
                         <td className="px-6 py-3 font-medium text-[var(--color-ink-900)]">{d.clientName}</td>
                         <td className="px-6 py-3 text-[var(--color-ink-700)]">{d.serviceName}</td>
@@ -185,8 +185,8 @@ export default async function EmployeeReportDetailPage({
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-[var(--color-ink-900)]">{d.clientName}</p>
                       <span className="shrink-0 whitespace-nowrap text-xs text-[var(--color-ink-500)]">
-                        {date.toLocaleDateString("es-CO", { day: "numeric", month: "short" })} ·{" "}
-                        {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" })}
+                        {date.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })} ·{" "}
+                        {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
