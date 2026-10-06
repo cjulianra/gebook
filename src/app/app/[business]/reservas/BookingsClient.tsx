@@ -17,7 +17,7 @@ import { WeekStrip } from "@/components/ui/WeekStrip";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { cn } from "@/lib/utils/cn";
 import { formatTime12h } from "@/lib/utils/dateRange";
-import { getAvailableSlots } from "@/app/b/[slug]/actions";
+import { getAvailableSlots } from "@/app/[slug]/actions";
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
   return Array.isArray(v) ? v[0] : v ?? undefined;

@@ -148,7 +148,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
   function goToLogin() {
     const params = new URLSearchParams({ service: serviceId, employee: employeeId, day, time });
-    router.push(`/portal/login?redirect=${encodeURIComponent(`/b/${business.slug}?${params.toString()}`)}`);
+    router.push(`/portal/login?redirect=${encodeURIComponent(`/${business.slug}?${params.toString()}`)}`);
   }
 
   async function handleConfirm() {

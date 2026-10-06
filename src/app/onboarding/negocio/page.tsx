@@ -26,6 +26,22 @@ function slugify(input: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Segmentos de la raíz del sitio que ya usa el sistema — ningún negocio puede quedarse con ellos.
+const RESERVED_SLUGS = new Set(["login", "register", "app", "admin", "onboarding", "portal", "api"]);
+
+async function findAvailableSlug(supabase: ReturnType<typeof createClient>, base: string) {
+  let candidate = base;
+  let suffix = 2;
+  for (;;) {
+    if (!RESERVED_SLUGS.has(candidate)) {
+      const { data } = await supabase.from("businesses").select("id").eq("slug", candidate).maybeSingle();
+      if (!data) return candidate;
+    }
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+}
+
 export default function OnboardingNegocioPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -51,7 +67,7 @@ export default function OnboardingNegocioPage() {
       return;
     }
 
-    const slug = `${slugify(name)}-${user.id.slice(0, 6)}`;
+    const slug = await findAvailableSlug(supabase, slugify(name) || "negocio");
 
     const { data: business, error: businessError } = await supabase
       .from("businesses")
