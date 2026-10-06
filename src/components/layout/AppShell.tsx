@@ -16,17 +16,13 @@ import { cn } from "@/lib/utils/cn";
 const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { business, membership, profile, onboardingStep } = useBusiness();
+  const { business, membership, profile } = useBusiness();
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
-  // Durante el onboarding solo mostramos el paso actual en la navegación, para
-  // guiar al dueño del negocio sin que se distraiga con el resto de secciones.
-  const items = NAV_ITEMS.filter((item) => item.roles.includes(membership.role)).filter(
-    (item) => !onboardingStep || item.href === onboardingStep
-  );
+  const items = NAV_ITEMS.filter((item) => item.roles.includes(membership.role));
   const primaryItems = items.filter((item) => PRIMARY_MOBILE_HREFS.includes(item.href));
   const moreItems = items.filter((item) => !PRIMARY_MOBILE_HREFS.includes(item.href));
   const base = `/app/${business.slug}`;

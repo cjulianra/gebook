@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useBusiness } from "@/lib/context/BusinessContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -58,6 +60,8 @@ export function EmployeesClient({
   initialPayouts: Payout[];
   earnedCommissions: Record<string, number>;
 }) {
+  const router = useRouter();
+  const { business } = useBusiness();
   const [members, setMembers] = useState(initialMembers);
   const [assignments, setAssignments] = useState(initialAssignments);
   const [schedules, setSchedules] = useState(initialSchedules);
@@ -128,10 +132,13 @@ export function EmployeesClient({
         businessId={businessId}
         services={services}
         onInvited={(member, serviceIds) => {
+          const wasFirstEmployee = members.length === 0;
           setMembers((prev) => [member, ...prev]);
           setAssignments((prev) => [...prev, ...serviceIds.map((service_id) => ({ business_member_id: member.id, service_id }))]);
           setInviteOpen(false);
           showToast("Invitación enviada.");
+          // Si este es el primer empleado, el onboarding queda completo: lo llevamos directo a la Agenda.
+          if (wasFirstEmployee) router.push(`/app/${business.slug}/reservas`);
         }}
       />
 

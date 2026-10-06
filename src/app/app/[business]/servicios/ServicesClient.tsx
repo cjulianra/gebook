@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
+import { useBusiness } from "@/lib/context/BusinessContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,6 +19,8 @@ type Service = Database["public"]["Tables"]["services"]["Row"];
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
 export function ServicesClient({ businessId, initialServices }: { businessId: string; initialServices: Service[] }) {
+  const router = useRouter();
+  const { business } = useBusiness();
   const [services, setServices] = useState(initialServices);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
@@ -106,9 +110,12 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
         businessId={businessId}
         service={editing}
         onSaved={(saved, isNew) => {
+          const wasFirstService = isNew && services.length === 0;
           setServices((prev) => (isNew ? [saved, ...prev] : prev.map((s) => (s.id === saved.id ? saved : s))));
           setModalOpen(false);
           showToast(isNew ? "Servicio creado." : "Servicio actualizado.");
+          // Si este es el primer servicio, avanzamos directo al siguiente paso del onboarding: crear empleados.
+          if (wasFirstService) router.push(`/app/${business.slug}/empleados`);
         }}
       />
 
