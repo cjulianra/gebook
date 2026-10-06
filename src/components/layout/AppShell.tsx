@@ -38,12 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="gradient-canvas min-h-screen md:flex">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col px-3 py-4 md:flex">
-        <div className="flex items-center gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)]/70 px-4 py-3 shadow-[var(--shadow-sm)]">
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={36} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[var(--color-ink-900)]">{business.name}</p>
-            <p className="truncate text-xs text-[var(--color-ink-500)]">{business.business_type ?? "Negocio"}</p>
-          </div>
+        <div className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)]/70 px-4 py-3 shadow-[var(--shadow-sm)]">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={44} />
           <NotificationBell />
         </div>
 
@@ -93,9 +89,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile header */}
       <header className="relative flex items-center justify-between px-4 py-3 md:hidden">
-        <div className="flex items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--color-surface)]/80 py-1.5 pl-1.5 pr-4 shadow-[var(--shadow-sm)]">
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={28} rounded="full" />
-          <p className="truncate text-sm font-semibold text-[var(--color-ink-900)]">{business.name}</p>
+        <div className="flex items-center rounded-[var(--radius-pill)] bg-[var(--color-surface)]/80 p-1 shadow-[var(--shadow-sm)]">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={34} />
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell className="rounded-full bg-[var(--color-surface)]/80 shadow-[var(--shadow-sm)]" />
@@ -235,19 +230,15 @@ export function BusinessMark({
 }) {
   const radius = rounded === "full" ? "rounded-full" : "rounded-[var(--radius-sm)]";
   if (logoUrl) {
-    // Los logos suelen ser horizontales: se muestran completos (sin recortar)
-    // con una altura fija y ancho libre según su propia proporción, con un
-    // ancho mínimo igual a `size` para que nunca se vean demasiado angostos.
-    // rounded-full no aplica aquí — recortaría un logo horizontal en un
-    // óvalo; esa variante queda solo para el monograma de respaldo.
+    // Los logos suelen ser horizontales: se muestran completos (sin recortar),
+    // solos (sin nombre al lado), con su propio padding vertical y una
+    // esquina apenas redondeada — no el óvalo/círculo de `rounded="full"`,
+    // que recortaría un logo horizontal.
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
-      <img
-        src={logoUrl}
-        alt={name}
-        className="shrink-0 rounded-[var(--radius-sm)] bg-[var(--color-surface)] object-contain"
-        style={{ height: size, width: "auto", minWidth: size }}
-      />
+      <div className="flex shrink-0 items-center justify-center rounded-[6px] bg-[var(--color-surface)] px-3 py-2.5" style={{ height: size }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host */}
+        <img src={logoUrl} alt={name} className="h-full w-auto object-contain" style={{ minWidth: size - 20 }} />
+      </div>
     );
   }
   return (

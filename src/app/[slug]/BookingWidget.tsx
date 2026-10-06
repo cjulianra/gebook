@@ -243,18 +243,19 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
   return (
     <div className="gradient-canvas min-h-screen">
-      <header className="mx-auto max-w-2xl px-4 pt-8 pb-2 md:px-8">
-        <div className="mb-5 flex items-center gap-3">
-          {step > 1 && (
-            <button
-              onClick={goBack}
-              aria-label="Atrás"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface)]/80 text-[var(--color-ink-700)] shadow-[var(--shadow-sm)]"
-            >
-              ←
-            </button>
-          )}
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={40} />
+      <header className="relative mx-auto max-w-2xl px-4 pt-8 pb-2 md:px-8">
+        {step > 1 && (
+          <button
+            onClick={goBack}
+            aria-label="Atrás"
+            className="absolute left-4 top-8 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface)]/80 text-[var(--color-ink-700)] shadow-[var(--shadow-sm)] md:left-8"
+          >
+            ←
+          </button>
+        )}
+
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={72} />
           <div className="min-w-0">
             <h1 className="text-xl font-semibold text-[var(--color-ink-900)]">{business.name}</h1>
             <p className="truncate text-xs text-[var(--color-ink-500)]">
