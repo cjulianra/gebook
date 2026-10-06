@@ -284,8 +284,17 @@ function NewBookingModal({
     setBookingDay(day);
   }, [open, day]);
 
+  // Clave estable con solo los servicios de cada línea: elegir hora o
+  // empleado también reasigna `lines` (para resetear employeeId), pero eso
+  // no debe disparar una nueva búsqueda de horarios — solo cambiar de
+  // servicio o de día debería hacerlo. Sin esto, cada clic en una pastilla
+  // de hora o en un empleado volvía a mostrar "Buscando horarios…" y todo
+  // "saltaba".
+  const serviceIdsKey = useMemo(() => lines.map((l) => l.serviceId).join("|"), [lines]);
+
   useEffect(() => {
-    if (lines.some((l) => !l.serviceId)) {
+    const serviceIds = serviceIdsKey ? serviceIdsKey.split("|") : [];
+    if (serviceIds.length === 0 || serviceIds.some((id) => !id)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale slots when inputs are incomplete
       setSlotsCache({});
       return;
@@ -294,11 +303,11 @@ function NewBookingModal({
     setLoadingSlots(true);
     const seen = new Set<string>();
     const pairs: { key: string; employeeId: string; duration: number }[] = [];
-    for (const line of lines) {
-      const service = services.find((s) => s.id === line.serviceId);
+    for (const serviceId of serviceIds) {
+      const service = services.find((s) => s.id === serviceId);
       if (!service) continue;
-      for (const emp of eligibleEmployeesFor(line.serviceId)) {
-        const key = `${line.serviceId}:${emp.id}`;
+      for (const emp of eligibleEmployeesFor(serviceId)) {
+        const key = `${serviceId}:${emp.id}`;
         if (seen.has(key)) continue;
         seen.add(key);
         pairs.push({ key, employeeId: emp.id, duration: service.duration_minutes });
@@ -317,7 +326,7 @@ function NewBookingModal({
     return () => {
       cancelled = true;
     };
-  }, [lines, bookingDay, services, eligibleEmployeesFor]);
+  }, [serviceIdsKey, bookingDay, services, eligibleEmployeesFor]);
 
   const firstLine = lines[0];
   // Horas candidatas: la unión de los horarios libres de todos los empleados
