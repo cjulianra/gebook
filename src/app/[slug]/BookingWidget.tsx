@@ -25,6 +25,8 @@ interface Business {
   business_type: string | null;
   phone: string | null;
   address: string | null;
+  city: string | null;
+  neighborhood: string | null;
   logo_url: string | null;
 }
 interface Service {
@@ -253,10 +255,15 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
             </button>
           )}
           <BusinessMark name={business.name} logoUrl={business.logo_url} size={40} />
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold text-[var(--color-ink-900)]">{business.name}</h1>
-            <p className="text-xs text-[var(--color-ink-500)]">
-              {[business.business_type, business.address].filter(Boolean).join(" · ") || "Reserva tu cita en línea"}
+            <p className="truncate text-xs text-[var(--color-ink-500)]">
+              {[
+                business.business_type,
+                [business.address, business.neighborhood, business.city].filter(Boolean).join(", "),
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Reserva tu cita en línea"}
             </p>
           </div>
         </div>

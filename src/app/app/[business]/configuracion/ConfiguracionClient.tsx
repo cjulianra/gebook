@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input, Label, Select, FieldError } from "@/components/ui/Input";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { CITIES, NEIGHBORHOODS_BY_CITY } from "@/lib/data/santanderLocations";
+import { cn } from "@/lib/utils/cn";
 
 type Business = Database["public"]["Tables"]["businesses"]["Row"];
 
@@ -146,10 +147,17 @@ function Inner({ business }: { business: Business }) {
         </CardHeader>
         <CardBody>
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] [background:var(--gradient-accent)]">
+            <div
+              className={cn(
+                "flex h-20 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
+                logoUrl ? "min-w-20 bg-[var(--color-canvas)] px-2" : "w-20 [background:var(--gradient-accent)]"
+              )}
+            >
               {logoUrl ? (
+                // Los logos suelen ser horizontales: se muestra completo (sin
+                // recortar), con alto fijo y ancho libre según su proporción.
                 // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
-                <img src={logoUrl} alt={business.name} className="h-full w-full object-cover" />
+                <img src={logoUrl} alt={business.name} className="h-full w-auto object-contain" />
               ) : (
                 <span className="text-2xl font-semibold text-[var(--color-accent-ink)]">{business.name[0]?.toUpperCase()}</span>
               )}

@@ -235,13 +235,18 @@ export function BusinessMark({
 }) {
   const radius = rounded === "full" ? "rounded-full" : "rounded-[var(--radius-sm)]";
   if (logoUrl) {
+    // Los logos suelen ser horizontales: se muestran completos (sin recortar)
+    // con una altura fija y ancho libre según su propia proporción, con un
+    // ancho mínimo igual a `size` para que nunca se vean demasiado angostos.
+    // rounded-full no aplica aquí — recortaría un logo horizontal en un
+    // óvalo; esa variante queda solo para el monograma de respaldo.
     return (
       // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
       <img
         src={logoUrl}
         alt={name}
-        className={cn("shrink-0 object-cover", radius)}
-        style={{ width: size, height: size }}
+        className="shrink-0 rounded-[var(--radius-sm)] bg-[var(--color-surface)] object-contain"
+        style={{ height: size, width: "auto", minWidth: size }}
       />
     );
   }
