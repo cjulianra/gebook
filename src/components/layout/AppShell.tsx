@@ -242,7 +242,7 @@ export function BusinessMark({
     if (fill) {
       return (
         // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
-        <img src={logoUrl} alt={name} className="w-full object-contain" style={{ height: size }} />
+        <img src={logoUrl} alt={name} className="w-full rounded-[10px] object-contain" style={{ height: size }} />
       );
     }
     return (
