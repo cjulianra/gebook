@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
+import { Input, Label, FieldError } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { BusinessMark } from "@/components/layout/AppShell";
@@ -45,7 +46,7 @@ interface Assignment {
   service_id: string;
 }
 
-const STEPS = ["Servicio", "Profesional", "Fecha y hora", "Confirmar"] as const;
+const STEPS = ["Servicio", "Fecha y hora", "Profesional", "Confirmar"] as const;
 type Step = 1 | 2 | 3 | 4;
 
 export function BookingWidget(props: {
@@ -89,11 +90,14 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
   const [employeeId, setEmployeeId] = useState(initialEmployee);
   const [day, setDay] = useState(initialDay);
   const [time, setTime] = useState(initialTime);
-  const [step, setStep] = useState<Step>(initialTime ? 4 : initialEmployee ? 3 : initialService ? 2 : 1);
-  const [slots, setSlots] = useState<string[]>([]);
+  const [step, setStep] = useState<Step>(initialEmployee ? 4 : initialTime ? 3 : initialService ? 2 : 1);
+  const [employeeSlots, setEmployeeSlots] = useState<Record<string, string[]>>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestError, setGuestError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -113,32 +117,60 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
   const employee = eligibleEmployees.find((e) => e.business_member_id === employeeId);
 
+  // Igual que en la reserva del negocio: primero se busca la disponibilidad
+  // de TODOS los profesionales elegibles para el servicio y día elegidos, así
+  // las horas que se muestran siempre tienen a alguien disponible, y luego se
+  // puede ver quién específicamente está libre a esa hora.
   useEffect(() => {
-    if (!service || !employeeId) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-dependency-change is the intended pattern here
+    if (!service || eligibleEmployees.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale slots when inputs are incomplete
+      setEmployeeSlots({});
+      return;
+    }
+    let cancelled = false;
     setLoadingSlots(true);
-    getAvailableSlots(employeeId, day, service.duration_minutes)
-      .then(setSlots)
-      .finally(() => setLoadingSlots(false));
-  }, [service, employeeId, day]);
+    Promise.all(
+      eligibleEmployees.map(async (e) => {
+        const empSlots = await getAvailableSlots(e.business_member_id, day, service.duration_minutes);
+        return [e.business_member_id, empSlots] as const;
+      })
+    ).then((results) => {
+      if (cancelled) return;
+      setEmployeeSlots(Object.fromEntries(results));
+      setLoadingSlots(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [service, day, eligibleEmployees]);
+
+  const candidateTimes = useMemo(() => {
+    const all = new Set<string>();
+    for (const e of eligibleEmployees) {
+      for (const t of employeeSlots[e.business_member_id] ?? []) all.add(t);
+    }
+    return Array.from(all).sort();
+  }, [eligibleEmployees, employeeSlots]);
+
+  function isEmployeeAvailable(id: string) {
+    return (employeeSlots[id] ?? []).includes(time);
+  }
 
   function selectService(id: string) {
     setServiceId(id);
     setEmployeeId("");
     setTime("");
-    setSlots([]);
     setStep(2);
-  }
-
-  function selectEmployee(id: string) {
-    setEmployeeId(id);
-    setTime("");
-    setSlots([]);
-    setStep(3);
   }
 
   function selectTime(t: string) {
     setTime(t);
+    setEmployeeId("");
+    setStep(3);
+  }
+
+  function selectEmployee(id: string) {
+    setEmployeeId(id);
     setStep(4);
   }
 
@@ -153,6 +185,13 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
   async function handleConfirm() {
     if (!service || !employeeId || !time) return;
+
+    if (!userEmail) {
+      setGuestError(null);
+      if (!guestName.trim()) return setGuestError("Escribe tu nombre.");
+      if (!guestPhone.trim()) return setGuestError("Escribe tu número de WhatsApp.");
+    }
+
     setConfirming(true);
     const result = await confirmBooking({
       businessId: business.id,
@@ -161,13 +200,11 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
       day,
       time,
       durationMinutes: service.duration_minutes,
+      guestName: guestName.trim() || undefined,
+      guestPhone: guestPhone.trim() || undefined,
     });
     setConfirming(false);
 
-    if (result.error === "login_required") {
-      goToLogin();
-      return;
-    }
     if (result.error) {
       showToast(result.error, "danger");
       return;
@@ -189,9 +226,13 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
                 {bogotaDateTime(day, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · {formatTime12h(time)}
               </p>
             </div>
-            <Button onClick={() => router.push("/portal")} className="w-full">
-              Ver mis reservas
-            </Button>
+            {userEmail ? (
+              <Button onClick={() => router.push("/portal")} className="w-full">
+                Ver mis reservas
+              </Button>
+            ) : (
+              <p className="text-xs text-[var(--color-ink-500)]">Te escribiremos por WhatsApp para confirmar los detalles.</p>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -229,25 +270,29 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
         )}
 
         {step === 2 && service && (
-          <StepProfesional employees={eligibleEmployees} selectedId={employeeId} onSelect={selectEmployee} />
-        )}
-
-        {step === 3 && service && employeeId && (
           <StepFechaHora
             day={day}
             time={time}
-            slots={slots}
+            candidateTimes={candidateTimes}
             loading={loadingSlots}
-            onDay={(d) => { setDay(d); setTime(""); setSlots([]); }}
+            onDay={(d) => {
+              setDay(d);
+              setTime("");
+              setEmployeeId("");
+            }}
             onShiftWeek={(dir) => {
               const d = new Date(`${day}T00:00:00`);
               d.setDate(d.getDate() + dir * 7);
               setDay(d.toISOString().slice(0, 10));
               setTime("");
-              setSlots([]);
+              setEmployeeId("");
             }}
             onSelectTime={selectTime}
           />
+        )}
+
+        {step === 3 && service && time && (
+          <StepProfesional employees={eligibleEmployees} selectedId={employeeId} isAvailable={isEmployeeAvailable} onSelect={selectEmployee} />
         )}
 
         {step === 4 && service && employee && time && (
@@ -259,8 +304,14 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
             authChecked={authChecked}
             loggedIn={!!userEmail}
             confirming={confirming}
+            guestName={guestName}
+            guestPhone={guestPhone}
+            guestError={guestError}
+            onGuestNameChange={setGuestName}
+            onGuestPhoneChange={setGuestPhone}
             onEdit={(target) => setStep(target)}
             onConfirm={handleConfirm}
+            onGoToLogin={goToLogin}
           />
         )}
       </main>
@@ -345,33 +396,50 @@ function StepServicio({ services, selectedId, onSelect }: { services: Service[];
   );
 }
 
-function StepProfesional({ employees, selectedId, onSelect }: { employees: Employee[]; selectedId: string; onSelect: (id: string) => void }) {
+function StepProfesional({
+  employees,
+  selectedId,
+  isAvailable,
+  onSelect,
+}: {
+  employees: Employee[];
+  selectedId: string;
+  isAvailable: (id: string) => boolean;
+  onSelect: (id: string) => void;
+}) {
   return (
     <Card>
       <CardBody>
-        <h2 className="mb-3 text-sm font-semibold text-[var(--color-ink-900)]">Elige profesional</h2>
+        <h2 className="mb-3 text-sm font-semibold text-[var(--color-ink-900)]">¿Quién te atiende?</h2>
         {employees.length === 0 ? (
           <EmptyState title="Sin profesionales disponibles para este servicio" />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="space-y-2">
             {employees.map((e) => {
               const selected = e.business_member_id === selectedId;
+              const available = isAvailable(e.business_member_id);
               return (
                 <button
                   key={e.business_member_id}
+                  disabled={!available}
                   onClick={() => onSelect(e.business_member_id)}
                   className={cn(
-                    "flex flex-col items-center gap-2 rounded-[var(--radius-md)] border px-3 py-4 text-center transition-all",
+                    "flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border px-4 py-3 text-left transition-all",
                     selected
                       ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
-                      : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+                      : available
+                        ? "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+                        : "cursor-not-allowed border-[var(--color-border)] opacity-50"
                   )}
                 >
-                  <Avatar name={e.full_name} src={e.photo_url} size={56} />
-                  <span>
-                    <span className="block text-sm font-medium text-[var(--color-ink-900)]">{e.full_name}</span>
-                    {e.specialty && <span className="block text-xs text-[var(--color-ink-500)]">{e.specialty}</span>}
+                  <span className="flex items-center gap-3">
+                    <Avatar name={e.full_name} src={e.photo_url} size={44} />
+                    <span>
+                      <span className="block text-sm font-medium text-[var(--color-ink-900)]">{e.full_name}</span>
+                      {e.specialty && <span className="block text-xs text-[var(--color-ink-500)]">{e.specialty}</span>}
+                    </span>
                   </span>
+                  <Badge tone={available ? "success" : "danger"}>{available ? "Disponible" : "No disponible"}</Badge>
                 </button>
               );
             })}
@@ -385,7 +453,7 @@ function StepProfesional({ employees, selectedId, onSelect }: { employees: Emplo
 function StepFechaHora({
   day,
   time,
-  slots,
+  candidateTimes,
   loading,
   onDay,
   onShiftWeek,
@@ -393,7 +461,7 @@ function StepFechaHora({
 }: {
   day: string;
   time: string;
-  slots: string[];
+  candidateTimes: string[];
   loading: boolean;
   onDay: (d: string) => void;
   onShiftWeek: (dir: -1 | 1) => void;
@@ -407,11 +475,11 @@ function StepFechaHora({
           <h2 className="mb-3 text-sm font-semibold text-[var(--color-ink-900)]">Horarios disponibles</h2>
           {loading ? (
             <p className="text-sm text-[var(--color-ink-500)]">Buscando horarios…</p>
-          ) : slots.length === 0 ? (
+          ) : candidateTimes.length === 0 ? (
             <EmptyState title="Sin horarios disponibles este día" description="Elige otro día en el calendario." />
           ) : (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-              {slots.map((t) => (
+              {candidateTimes.map((t) => (
                 <button
                   key={t}
                   onClick={() => onSelectTime(t)}
@@ -441,8 +509,14 @@ function StepConfirmar({
   authChecked,
   loggedIn,
   confirming,
+  guestName,
+  guestPhone,
+  guestError,
+  onGuestNameChange,
+  onGuestPhoneChange,
   onEdit,
   onConfirm,
+  onGoToLogin,
 }: {
   service: Service;
   employee: Employee;
@@ -451,8 +525,14 @@ function StepConfirmar({
   authChecked: boolean;
   loggedIn: boolean;
   confirming: boolean;
+  guestName: string;
+  guestPhone: string;
+  guestError: string | null;
+  onGuestNameChange: (v: string) => void;
+  onGuestPhoneChange: (v: string) => void;
   onEdit: (step: Step) => void;
   onConfirm: () => void;
+  onGoToLogin: () => void;
 }) {
   return (
     <Card>
@@ -473,10 +553,25 @@ function StepConfirmar({
           onEdit={() => onEdit(3)}
         />
 
-        {authChecked && !loggedIn && <Badge tone="info">Necesitas una cuenta para confirmar</Badge>}
+        {authChecked && !loggedIn && (
+          <div className="space-y-3 border-t border-[var(--color-border)] pt-4">
+            <div>
+              <Label htmlFor="guestName">Nombre</Label>
+              <Input id="guestName" value={guestName} onChange={(e) => onGuestNameChange(e.target.value)} placeholder="Tu nombre" />
+            </div>
+            <div>
+              <Label htmlFor="guestPhone">Número de WhatsApp</Label>
+              <Input id="guestPhone" value={guestPhone} onChange={(e) => onGuestPhoneChange(e.target.value)} placeholder="300 123 4567" />
+            </div>
+            <FieldError>{guestError ?? undefined}</FieldError>
+            <button type="button" onClick={onGoToLogin} className="text-xs font-medium text-[var(--color-accent)] hover:underline">
+              ¿Ya tienes cuenta? Inicia sesión para ver tu historial
+            </button>
+          </div>
+        )}
 
         <Button className="w-full" onClick={onConfirm} disabled={confirming}>
-          {confirming ? "Confirmando…" : loggedIn ? "Confirmar reserva" : "Iniciar sesión y confirmar"}
+          {confirming ? "Confirmando…" : "Confirmar reserva"}
         </Button>
       </CardBody>
     </Card>

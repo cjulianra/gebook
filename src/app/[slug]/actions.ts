@@ -67,6 +67,8 @@ interface ConfirmBookingInput {
   day: string;
   time: string;
   durationMinutes: number;
+  guestName?: string;
+  guestPhone?: string;
 }
 
 export async function confirmBooking(input: ConfirmBookingInput) {
@@ -75,10 +77,6 @@ export async function confirmBooking(input: ConfirmBookingInput) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { error: "login_required" as const };
-  }
-
   const freeSlots = await computeFreeSlots(input.businessMemberId, input.day, input.durationMinutes);
   if (!freeSlots.includes(input.time)) {
     return { error: "Ese horario ya no está disponible. Elige otro." };
@@ -86,31 +84,69 @@ export async function confirmBooking(input: ConfirmBookingInput) {
 
   const admin = createAdminClient();
 
-  const { data: profile } = await admin.from("profiles").select("full_name, email").eq("id", user.id).single();
-  if (!profile) return { error: "No pudimos verificar tu cuenta." };
+  let clientId: string;
 
-  let { data: clientRow } = await admin
-    .from("clients")
-    .select("id")
-    .eq("business_id", input.businessId)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  if (user) {
+    // Cliente con cuenta: se vincula a su user_id, así ve su historial en /portal.
+    const { data: profile } = await admin.from("profiles").select("full_name, email").eq("id", user.id).single();
+    if (!profile) return { error: "No pudimos verificar tu cuenta." };
 
-  if (!clientRow) {
-    const [firstName, ...rest] = profile.full_name.split(" ");
-    const { data: created, error: createError } = await admin
+    let { data: clientRow } = await admin
       .from("clients")
-      .insert({
-        business_id: input.businessId,
-        user_id: user.id,
-        first_name: firstName || profile.full_name,
-        last_name: rest.join(" ") || null,
-        email: profile.email,
-      })
       .select("id")
-      .single();
-    if (createError || !created) return { error: "No pudimos crear tu perfil de cliente en este negocio." };
-    clientRow = created;
+      .eq("business_id", input.businessId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!clientRow) {
+      const [firstName, ...rest] = profile.full_name.split(" ");
+      const { data: created, error: createError } = await admin
+        .from("clients")
+        .insert({
+          business_id: input.businessId,
+          user_id: user.id,
+          first_name: firstName || profile.full_name,
+          last_name: rest.join(" ") || null,
+          email: profile.email,
+        })
+        .select("id")
+        .single();
+      if (createError || !created) return { error: "No pudimos crear tu perfil de cliente en este negocio." };
+      clientRow = created;
+    }
+    clientId = clientRow.id;
+  } else {
+    // Invitado sin cuenta: solo necesita nombre y WhatsApp — no se exige login para reservar.
+    const guestName = input.guestName?.trim();
+    const guestPhone = input.guestPhone?.trim();
+    if (!guestName || !guestPhone) {
+      return { error: "Escribe tu nombre y tu número de WhatsApp." };
+    }
+
+    let { data: clientRow } = await admin
+      .from("clients")
+      .select("id")
+      .eq("business_id", input.businessId)
+      .eq("phone", guestPhone)
+      .is("user_id", null)
+      .maybeSingle();
+
+    if (!clientRow) {
+      const [firstName, ...rest] = guestName.split(" ");
+      const { data: created, error: createError } = await admin
+        .from("clients")
+        .insert({
+          business_id: input.businessId,
+          first_name: firstName || guestName,
+          last_name: rest.join(" ") || null,
+          phone: guestPhone,
+        })
+        .select("id")
+        .single();
+      if (createError || !created) return { error: "No pudimos crear tu reserva. Intenta de nuevo." };
+      clientRow = created;
+    }
+    clientId = clientRow.id;
   }
 
   const startAt = bogotaDateTime(input.day, `${input.time}:00`);
@@ -118,7 +154,7 @@ export async function confirmBooking(input: ConfirmBookingInput) {
 
   const { error: bookingError } = await admin.from("bookings").insert({
     business_id: input.businessId,
-    client_id: clientRow.id,
+    client_id: clientId,
     service_id: input.serviceId,
     business_member_id: input.businessMemberId,
     start_at: startAt.toISOString(),
