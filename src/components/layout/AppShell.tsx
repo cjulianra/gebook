@@ -8,6 +8,7 @@ import { NAV_ITEMS } from "./nav-items";
 import { NavIcon } from "./icons";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { Avatar } from "@/components/ui/Avatar";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 
@@ -15,13 +16,17 @@ import { cn } from "@/lib/utils/cn";
 const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { business, membership, profile } = useBusiness();
+  const { business, membership, profile, onboardingStep } = useBusiness();
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const items = NAV_ITEMS.filter((item) => item.roles.includes(membership.role));
+  // Durante el onboarding solo mostramos el paso actual en la navegación, para
+  // guiar al dueño del negocio sin que se distraiga con el resto de secciones.
+  const items = NAV_ITEMS.filter((item) => item.roles.includes(membership.role)).filter(
+    (item) => !onboardingStep || item.href === onboardingStep
+  );
   const primaryItems = items.filter((item) => PRIMARY_MOBILE_HREFS.includes(item.href));
   const moreItems = items.filter((item) => !PRIMARY_MOBILE_HREFS.includes(item.href));
   const base = `/app/${business.slug}`;
@@ -91,6 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <BusinessMark name={business.name} logoUrl={business.logo_url} size={44} fill />
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBell className="rounded-full bg-[var(--color-surface)]/80 shadow-[var(--shadow-sm)]" />
           <button
             onClick={() => setMoreOpen((v) => !v)}
             aria-label="Abrir menú"

@@ -8,7 +8,7 @@ export function PageHeader({ title, description, action }: { title: React.ReactN
         {description && <p className="mt-1 text-sm text-[var(--color-ink-500)]">{description}</p>}
       </div>
       <div className="flex items-center gap-2">
-        <NotificationBell />
+        <NotificationBell className="hidden md:flex" />
         {action}
       </div>
     </div>

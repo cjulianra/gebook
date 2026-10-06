@@ -7,6 +7,8 @@ export interface BusinessContextValue {
   business: { id: string; name: string; slug: string; business_type: string | null; logo_url: string | null };
   membership: { id: string; role: MemberRole; canCreateBookings: boolean };
   profile: { id: string; full_name: string; email: string; avatar_url: string | null };
+  /** Paso del onboarding inicial que falta completar, o null si ya está listo. */
+  onboardingStep: "servicios" | "empleados" | null;
 }
 
 const BusinessContext = createContext<BusinessContextValue | null>(null);
