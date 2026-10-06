@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, FieldError } from "@/components/ui/Input";
+import { Input, PasswordInput, Label, FieldError } from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
 
 export default function PortalLoginPage() {
@@ -49,7 +49,7 @@ function PortalLoginForm() {
           </div>
           <div>
             <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            <PasswordInput id="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <FieldError>{error ?? undefined}</FieldError>
           <Button type="submit" className="w-full" disabled={loading}>

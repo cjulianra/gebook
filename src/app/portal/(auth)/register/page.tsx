@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, FieldError } from "@/components/ui/Input";
+import { Input, PasswordInput, Label, FieldError } from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
 import { claimClientRecords } from "../../actions";
 
@@ -16,6 +16,7 @@ export default function PortalRegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,11 +41,33 @@ export default function PortalRegisterPage() {
       return;
     }
 
+    // Si Supabase pide confirmar el correo, no hay sesión todavía: mostramos el aviso en vez de avanzar.
+    if (!data.session) {
+      setLoading(false);
+      setCheckEmail(true);
+      return;
+    }
+
     await claimClientRecords(data.user.id, email);
 
     setLoading(false);
     router.replace("/portal");
     router.refresh();
+  }
+
+  if (checkEmail) {
+    return (
+      <Card>
+        <CardBody className="space-y-3 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-accent-soft)] text-2xl">✉️</div>
+          <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">Revisa tu correo</h2>
+          <p className="text-sm text-[var(--color-ink-500)]">
+            Te enviamos un enlace de verificación a <span className="font-medium text-[var(--color-ink-700)]">{email}</span>. Ábrelo para
+            activar tu cuenta y continuar.
+          </p>
+        </CardBody>
+      </Card>
+    );
   }
 
   return (
@@ -61,7 +84,7 @@ export default function PortalRegisterPage() {
           </div>
           <div>
             <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />
+            <PasswordInput id="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />
           </div>
           <FieldError>{error ?? undefined}</FieldError>
           <Button type="submit" className="w-full" disabled={loading}>

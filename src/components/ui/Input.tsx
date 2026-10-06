@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, forwardRef, TextareaHTMLAttributes, SelectHTMLAttributes } from "react";
+import { InputHTMLAttributes, forwardRef, TextareaHTMLAttributes, SelectHTMLAttributes, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 
 // text-base (16px) a propósito: por debajo de 16px, iOS Safari hace zoom
@@ -13,6 +13,48 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   )
 );
 Input.displayName = "Input";
+
+export const PasswordInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => {
+    const [visible, setVisible] = useState(false);
+    return (
+      <div className="relative">
+        <input
+          ref={ref}
+          type={visible ? "text" : "password"}
+          className={cn(fieldBase, "h-11 pr-11", className)}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[var(--color-ink-400)] hover:text-[var(--color-ink-700)]"
+        >
+          {visible ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+        </button>
+      </div>
+    );
+  }
+);
+PasswordInput.displayName = "PasswordInput";
+
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M1.5 12s3.75-7 10.5-7 10.5 7 10.5 7-3.75 7-10.5 7-10.5-7-10.5-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.88 5.09A10.6 10.6 0 0 1 12 5c6.75 0 10.5 7 10.5 7a13.2 13.2 0 0 1-3.08 3.88M6.6 6.6C3.9 8.3 1.5 12 1.5 12a13.2 13.2 0 0 0 5.88 5.91" />
+    </svg>
+  );
+}
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   ({ className, ...props }, ref) => (
