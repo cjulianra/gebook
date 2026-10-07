@@ -28,7 +28,6 @@ export function TodayAgendaClient({
   const [bookings, setBookings] = useState(initialBookings);
   const [toCancel, setToCancel] = useState<Booking | null>(null);
   const [toEdit, setToEdit] = useState<Booking | null>(null);
-  const [openActionsFor, setOpenActionsFor] = useState<string | null>(null);
   const showToast = useToast();
 
   async function advanceStatus(booking: Booking) {
@@ -66,20 +65,9 @@ export function TodayAgendaClient({
           <BookingRow
             key={booking.id}
             booking={booking}
-            menuOpen={openActionsFor === booking.id}
-            onToggleMenu={() => setOpenActionsFor((id) => (id === booking.id ? null : booking.id))}
-            onAdvance={(b) => {
-              advanceStatus(b);
-              setOpenActionsFor(null);
-            }}
-            onEdit={(b) => {
-              setToEdit(b);
-              setOpenActionsFor(null);
-            }}
-            onCancel={(b) => {
-              setToCancel(b);
-              setOpenActionsFor(null);
-            }}
+            onAdvance={advanceStatus}
+            onEdit={setToEdit}
+            onCancel={setToCancel}
           />
         ))}
       </div>
