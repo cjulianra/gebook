@@ -98,32 +98,83 @@ export function EmployeesClient({
             action={{ label: "Crear empleado", onClick: () => setInviteOpen(true) }}
           />
         ) : (
-          <div className="divide-y divide-[var(--color-border)]">
-            {members.map((member) => {
-              const profile = one(member.profiles)!;
-              const details = one(member.employee_details);
-              const earned = earnedCommissions[member.id] ?? 0;
-              const paid = payouts.filter((p) => p.business_member_id === member.id).reduce((sum, p) => sum + p.amount, 0);
-              const balance = earned - paid;
+          <>
+            {/* Desktop: una sola grilla para todas las filas, así cada columna
+                queda alineada de verdad entre empleados (no una fila flex por
+                separado, que deja cada dato donde le quepa). */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-[minmax(0,1fr)_110px_160px_auto] gap-3 border-b border-[var(--color-border)] px-5 py-2.5 text-xs font-medium text-[var(--color-ink-500)]">
+                <span>Empleado</span>
+                <span>Comisión</span>
+                <span>Estado</span>
+                <span className="sr-only">Acciones</span>
+              </div>
+              {members.map((member) => {
+                const profile = one(member.profiles)!;
+                const details = one(member.employee_details);
+                const earned = earnedCommissions[member.id] ?? 0;
+                const paid = payouts.filter((p) => p.business_member_id === member.id).reduce((sum, p) => sum + p.amount, 0);
+                const balance = earned - paid;
 
-              return (
-                <div key={member.id} className="flex items-center justify-between gap-3 px-5 py-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                return (
+                  <div
+                    key={member.id}
+                    className="grid grid-cols-[minmax(0,1fr)_110px_160px_auto] items-center gap-3 border-b border-[var(--color-border)] px-5 py-3 last:border-b-0"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
                       <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
+                    </div>
+                    <Badge tone="accent" className="w-fit">
+                      {details?.commission_rate ?? 40}%
+                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {member.status === "inactive" && <Badge tone="neutral">Inactivo</Badge>}
-                      <Badge tone="accent">{details?.commission_rate ?? 40}% comisión</Badge>
                       {balance > 0 && <Badge tone="danger">Debe {currency.format(balance)}</Badge>}
                     </div>
+                    <Button size="sm" variant="secondary" className="shrink-0 justify-self-end" onClick={() => setConfigFor(member)}>
+                      Configuración
+                    </Button>
                   </div>
-                  <Button size="sm" variant="secondary" className="shrink-0" onClick={() => setConfigFor(member)}>
-                    Configuración
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Mobile: tarjeta por empleado con pares etiqueta/valor en su propia
+                celda, para que todos los datos queden alineados entre tarjetas. */}
+            <div className="divide-y divide-[var(--color-border)] md:hidden">
+              {members.map((member) => {
+                const profile = one(member.profiles)!;
+                const details = one(member.employee_details);
+                const earned = earnedCommissions[member.id] ?? 0;
+                const paid = payouts.filter((p) => p.business_member_id === member.id).reduce((sum, p) => sum + p.amount, 0);
+                const balance = earned - paid;
+
+                return (
+                  <div key={member.id} className="space-y-3 px-4 py-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
+                        {member.status === "inactive" && <Badge tone="neutral">Inactivo</Badge>}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-[88px_1fr] gap-y-1.5 text-sm">
+                      <span className="text-[var(--color-ink-500)]">Comisión</span>
+                      <span className="text-[var(--color-ink-900)]">{details?.commission_rate ?? 40}%</span>
+                      <span className="text-[var(--color-ink-500)]">Saldo</span>
+                      <span className={balance > 0 ? "font-medium text-[var(--color-danger)]" : "text-[var(--color-ink-900)]"}>
+                        {balance > 0 ? `Debe ${currency.format(balance)}` : "Al día"}
+                      </span>
+                    </div>
+                    <Button size="sm" variant="secondary" className="w-full" onClick={() => setConfigFor(member)}>
+                      Configuración
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </Card>
 
