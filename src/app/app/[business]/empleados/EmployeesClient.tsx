@@ -99,7 +99,7 @@ export function EmployeesClient({
     const profile = one(member.profiles)!;
     const phoneDigits = result.data.phone.replace(/\D/g, "");
     const waNumber = phoneDigits.length === 10 ? `57${phoneDigits}` : phoneDigits;
-    const loginUrl = `${window.location.origin}/acceso`;
+    const loginUrl = `${window.location.origin}/${business.slug}/acceso`;
     const message = `Hola ${profile.full_name} \u{1F44B}, ya puedes entrar a tu panel de ${business.name} en Gebook.\n\nIngresa en: ${loginUrl}\nCon tu celular y este código de acceso: ${result.data.accessCode}`;
     window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, "_blank");
   }
@@ -492,20 +492,16 @@ function EmployeeConfigModal({
   return (
     <Modal open onClose={onClose} title={`Configuración de ${profile.full_name}`} size="lg">
       <div className="space-y-4">
-        <div className="flex flex-wrap gap-1 border-b border-[var(--color-border)] pb-2">
+        <div className="flex flex-wrap gap-2 border-b border-[var(--color-border)] pb-3">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                "rounded-[var(--radius-pill)] px-3 py-1.5 text-sm font-medium transition-colors",
+                "rounded-[var(--radius-pill)] border px-3 py-1.5 text-sm font-medium transition-colors",
                 tab === t.key
-                  ? t.key === "desactivar"
-                    ? "bg-[var(--color-danger)] text-white"
-                    : "bg-[var(--color-ink-900)] text-white"
-                  : t.key === "desactivar"
-                    ? "text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)]"
-                    : "text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+                  ? "border-transparent bg-[var(--color-ink-900)] text-white"
+                  : "border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
               )}
             >
               {t.label}

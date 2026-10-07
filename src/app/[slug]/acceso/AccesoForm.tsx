@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, FieldError } from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
+import { BusinessMark } from "@/components/layout/AppShell";
 import { requestAccessLink } from "./actions";
 
-export default function AccesoPage() {
+export function AccesoForm({ slug, businessName, logoUrl }: { slug: string; businessName: string; logoUrl: string | null }) {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -21,7 +21,7 @@ export default function AccesoPage() {
     setError(null);
     setLoading(true);
 
-    const result = await requestAccessLink({ phone, code });
+    const result = await requestAccessLink({ slug, phone, code });
     if (result.error || !result.data) {
       setLoading(false);
       setError(result.error ?? "No pudimos validar tus datos.");
@@ -37,7 +37,7 @@ export default function AccesoPage() {
       return;
     }
 
-    router.replace(`/app/${result.data.slug}/reservas`);
+    router.replace(`/app/${slug}/reservas`);
     router.refresh();
   }
 
@@ -45,8 +45,8 @@ export default function AccesoPage() {
     <div className="gradient-canvas flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] text-lg font-semibold text-[var(--color-accent-ink)] shadow-[var(--shadow-sm)] [background:var(--gradient-accent)]">
-            G
+          <div className="mx-auto mb-3 w-40">
+            <BusinessMark name={businessName} logoUrl={logoUrl} size={64} fill />
           </div>
           <h1 className="text-lg font-semibold text-[var(--color-ink-900)]">Acceso de empleados</h1>
           <p className="text-sm text-[var(--color-ink-500)]">Ingresa con tu celular y el código que te compartieron.</p>
@@ -84,12 +84,6 @@ export default function AccesoPage() {
               </Button>
             </form>
           </CardBody>
-          <div className="px-5 pb-5 text-center text-xs text-[var(--color-ink-400)]">
-            ¿Eres dueño o administrador?{" "}
-            <Link href="/login" className="underline">
-              Entra aquí
-            </Link>
-          </div>
         </Card>
       </div>
     </div>

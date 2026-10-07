@@ -63,12 +63,6 @@ function LoginForm() {
           Regístrate
         </Link>
       </div>
-      <div className="px-5 pb-5 text-center text-xs text-[var(--color-ink-400)]">
-        ¿Eres empleado?{" "}
-        <Link href="/acceso" className="underline">
-          Entra con tu celular
-        </Link>
-      </div>
     </Card>
   );
 }
