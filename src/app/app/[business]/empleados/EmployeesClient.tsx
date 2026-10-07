@@ -16,7 +16,6 @@ import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
 import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
-import { WhatsAppIcon } from "@/components/bookings/types";
 import { cn } from "@/lib/utils/cn";
 import { createEmployee, getInviteDetails, removeEmployee } from "./actions";
 
@@ -150,13 +149,9 @@ export function EmployeesClient({
                       {balance > 0 && <Badge tone="danger">Debe {currency.format(balance)}</Badge>}
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5 justify-self-end">
-                      <button
-                        onClick={() => handleInvite(member)}
-                        aria-label="Invitar por WhatsApp"
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#25D366] hover:bg-[var(--color-canvas)]"
-                      >
-                        <WhatsAppIcon className="h-5 w-5" />
-                      </button>
+                      <Button size="sm" variant="info-soft" onClick={() => handleInvite(member)}>
+                        Invitar
+                      </Button>
                       <Button size="sm" variant="secondary" onClick={() => setConfigFor(member)}>
                         Configuración
                       </Button>
@@ -184,13 +179,9 @@ export function EmployeesClient({
                         <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
-                        <button
-                          onClick={() => handleInvite(member)}
-                          aria-label="Invitar por WhatsApp"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas)] text-[#25D366] hover:bg-[var(--color-border)]"
-                        >
-                          <WhatsAppIcon className="h-4.5 w-4.5" />
-                        </button>
+                        <Button size="xs" variant="info-soft" onClick={() => handleInvite(member)}>
+                          Invitar
+                        </Button>
                         <button
                           onClick={() => setConfigFor(member)}
                           aria-label="Configuración"
