@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
@@ -105,28 +106,40 @@ export function OnboardingGate({
               {STEPS.map((s, i) => {
                 const stepIndex = STEPS.findIndex((x) => x.key === displayStep);
                 const state = i < stepIndex ? "done" : i === stepIndex ? "current" : "upcoming";
+                // "Servicios" siempre se puede revisitar; "Empleados" se habilita en cuanto
+                // ya hay al menos un servicio (step dejó de ser "servicios").
+                const navigable = s.key === "servicios" || step !== "servicios";
+                const stepContent = (
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                        state === "upcoming"
+                          ? "bg-white/60 text-[var(--color-ink-400)]"
+                          : "bg-[var(--color-ink-900)] text-white"
+                      )}
+                    >
+                      {state === "done" ? "✓" : i + 1}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-xs font-medium",
+                        state === "upcoming" ? "text-[var(--color-ink-400)]" : "text-[var(--color-ink-900)]"
+                      )}
+                    >
+                      {s.label}
+                    </span>
+                  </div>
+                );
                 return (
                   <div key={s.key} className="flex flex-1 items-center last:flex-none">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={cn(
-                          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                          state === "upcoming"
-                            ? "bg-white/60 text-[var(--color-ink-400)]"
-                            : "bg-[var(--color-ink-900)] text-white"
-                        )}
-                      >
-                        {state === "done" ? "✓" : i + 1}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-xs font-medium",
-                          state === "upcoming" ? "text-[var(--color-ink-400)]" : "text-[var(--color-ink-900)]"
-                        )}
-                      >
-                        {s.label}
-                      </span>
-                    </div>
+                    {navigable ? (
+                      <Link href={`/app/${slug}/${s.key}`} prefetch={false} className="rounded-[var(--radius-sm)] transition-opacity hover:opacity-70">
+                        {stepContent}
+                      </Link>
+                    ) : (
+                      stepContent
+                    )}
                     {i < STEPS.length - 1 && <div className="mx-2 h-px flex-1 bg-[var(--color-ink-900)]/15" />}
                   </div>
                 );

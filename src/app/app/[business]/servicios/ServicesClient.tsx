@@ -163,15 +163,20 @@ function ServiceFormModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Reset form fields whenever a different service (or "new") is opened.
-  const [lastServiceId, setLastServiceId] = useState<string | null>(service?.id ?? null);
-  if (open && (service?.id ?? null) !== lastServiceId) {
-    setLastServiceId(service?.id ?? null);
-    setName(service?.name ?? "");
-    setDescription(service?.description ?? "");
-    setPrice(service?.price?.toString() ?? "");
-    setDuration(service?.duration_minutes?.toString() ?? "");
-    setError(null);
+  // Reset form fields every time the modal transitions from cerrado a abierto —
+  // no solo cuando cambia el servicio, porque abrir "Agregar otro servicio" dos
+  // veces seguidas no cambia `service` (sigue siendo null) y antes dejaba los
+  // datos del servicio recién creado pegados en el formulario.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setName(service?.name ?? "");
+      setDescription(service?.description ?? "");
+      setPrice(service?.price?.toString() ?? "");
+      setDuration(service?.duration_minutes?.toString() ?? "");
+      setError(null);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
