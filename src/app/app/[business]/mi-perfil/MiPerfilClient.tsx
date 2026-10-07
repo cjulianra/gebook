@@ -1,29 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { EmptyState } from "@/components/ui/States";
-import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
 import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
-import { cn } from "@/lib/utils/cn";
-import { BOGOTA_TZ } from "@/lib/utils/dateRange";
-
-interface PeriodService {
-  id: string;
-  start_at: string;
-  clientName: string;
-  serviceName: string;
-  price: number;
-  commission: number;
-}
 
 export function MiPerfilClient(props: {
   businessId: string;
@@ -32,10 +18,6 @@ export function MiPerfilClient(props: {
   specialty: string | null;
   photoUrl: string | null;
   commissionRate: number;
-  earned: number;
-  initialPayouts: Payout[];
-  activePreset: string | null;
-  periodServices: PeriodService[];
   initialSchedules: Schedule[];
 }) {
   return (
@@ -52,10 +34,6 @@ function Inner({
   specialty,
   photoUrl,
   commissionRate,
-  earned,
-  initialPayouts,
-  activePreset,
-  periodServices,
   initialSchedules,
 }: {
   businessId: string;
@@ -64,18 +42,12 @@ function Inner({
   specialty: string | null;
   photoUrl: string | null;
   commissionRate: number;
-  earned: number;
-  initialPayouts: Payout[];
-  activePreset: string | null;
-  periodServices: PeriodService[];
   initialSchedules: Schedule[];
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const showToast = useToast();
   const [photo, setPhoto] = useState(photoUrl);
   const [uploading, setUploading] = useState(false);
-  const [payouts] = useState(initialPayouts);
   const [schedules, setSchedules] = useState(initialSchedules);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -133,7 +105,7 @@ function Inner({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
-      <PageHeader title="Mi perfil" description="Tu foto y tus cuentas con el negocio." />
+      <PageHeader title="Mi perfil" description="Tu foto y tu horario de trabajo." />
 
       <Card>
         <CardBody>
@@ -159,88 +131,6 @@ function Inner({
         </CardBody>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
-        {[
-          { key: "hoy", label: "Hoy" },
-          { key: "semana", label: "Esta semana" },
-          { key: "mes", label: "Este mes" },
-        ].map((p) => (
-          <Link
-            key={p.key}
-            href={`${pathname}?preset=${p.key}`}
-            className={cn(
-              "rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium transition-colors",
-              activePreset === p.key
-                ? "bg-[var(--color-ink-900)] text-white"
-                : "bg-[var(--color-surface)] text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
-            )}
-          >
-            {p.label}
-          </Link>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Mis servicios</CardTitle>
-        </CardHeader>
-        {periodServices.length === 0 ? (
-          <EmptyState title="Sin servicios completados en este período" />
-        ) : (
-          <>
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-ink-500)]">
-                    <th className="px-6 py-3 font-medium">Fecha</th>
-                    <th className="px-6 py-3 font-medium">Hora</th>
-                    <th className="px-6 py-3 font-medium">Cliente</th>
-                    <th className="px-6 py-3 font-medium">Servicio</th>
-                    <th className="px-6 py-3 font-medium">Precio</th>
-                    <th className="px-6 py-3 font-medium">Comisión</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {periodServices.map((d) => {
-                    const date = new Date(d.start_at);
-                    return (
-                      <tr key={d.id}>
-                        <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">{date.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })}</td>
-                        <td className="whitespace-nowrap px-6 py-3 text-[var(--color-ink-700)]">{date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}</td>
-                        <td className="px-6 py-3 font-medium text-[var(--color-ink-900)]">{d.clientName}</td>
-                        <td className="px-6 py-3 text-[var(--color-ink-700)]">{d.serviceName}</td>
-                        <td className="px-6 py-3 text-[var(--color-ink-700)]">{currency.format(d.price)}</td>
-                        <td className="px-6 py-3 font-medium text-[var(--color-ink-900)]">{currency.format(d.commission)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="divide-y divide-[var(--color-border)] sm:hidden">
-              {periodServices.map((d) => {
-                const date = new Date(d.start_at);
-                return (
-                  <div key={d.id} className="space-y-1.5 px-5 py-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-[var(--color-ink-900)]">{d.clientName}</p>
-                      <span className="shrink-0 whitespace-nowrap text-xs text-[var(--color-ink-500)]">
-                        {date.toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: BOGOTA_TZ })} · {date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[var(--color-ink-500)]">{d.serviceName}</span>
-                      <span className="text-[var(--color-ink-700)]">{currency.format(d.price)}</span>
-                    </div>
-                    <p className="text-right text-xs font-medium text-[var(--color-accent-ink)]">Comisión: {currency.format(d.commission)}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Mi horario</CardTitle>
@@ -257,15 +147,6 @@ function Inner({
               showToast("Horario actualizado.");
             }}
           />
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Mi cuenta</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <AccountPanel memberId={memberId} payouts={payouts} earned={earned} businessId={businessId} readOnly />
         </CardBody>
       </Card>
     </div>
