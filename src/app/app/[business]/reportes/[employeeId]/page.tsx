@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
@@ -35,6 +35,19 @@ export default async function EmployeeReportDetailPage({
   const supabase = await createClient();
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
+
+  // Mismo resguardo que /reportes: el detalle de un empleado (su comisión,
+  // sus clientes atendidos) tampoco es algo que otro empleado deba poder ver.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: membership } = await supabase
+    .from("business_members")
+    .select("role")
+    .eq("business_id", business.id)
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+  if (membership?.role === "employee") redirect(`/app/${slug}/reservas`);
 
   await syncBookingStatuses(supabase, business.id);
 

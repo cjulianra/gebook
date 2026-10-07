@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
@@ -47,6 +48,19 @@ export default async function ReportesPage({
   const supabase = await createClient();
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
+
+  // Reportes es solo para dueño/admin: trae comisiones e ingresos de TODOS los
+  // empleados, así que un empleado no debe poder verlo entrando directo por la URL.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: membership } = await supabase
+    .from("business_members")
+    .select("role")
+    .eq("business_id", business.id)
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+  if (membership?.role === "employee") redirect(`/app/${slug}/reservas`);
 
   await syncBookingStatuses(supabase, business.id);
 
