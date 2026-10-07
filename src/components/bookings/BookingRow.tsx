@@ -46,9 +46,17 @@ export function BookingRow({
     timeZone: BOGOTA_TZ,
   });
 
+  // Emojis escritos como \u{...} (no el carácter literal) para que nunca dependan de
+  // cómo el editor/pipeline de build interprete la codificación del archivo fuente.
+  const WAVE = "\u{1F44B}";
+  const CALENDAR = "\u{1F4C5}";
+  const CLOCK = "\u{1F550}";
+  const SCISSORS = "\u{1F487}";
+  const PERSON = "\u{1F464}";
+
   const whatsappHref = client?.phone
     ? `https://wa.me/${toWhatsAppNumber(client.phone)}?text=${encodeURIComponent(
-        `Hola ${client.first_name} 👋, te confirmamos tu reserva en ${business.name}:\n\n📅 ${dateLabel}\n🕐 ${startTime} – ${endTime}\n💇 ${service?.name ?? ""}\n👤 Con ${one(employee?.profiles)?.full_name ?? ""}\n\n¡Te esperamos!`
+        `Hola ${client.first_name} ${WAVE}, te confirmamos tu reserva en ${business.name}:\n\n${CALENDAR} ${dateLabel}\n${CLOCK} ${startTime} - ${endTime}\n${SCISSORS} ${service?.name ?? ""}\n${PERSON} Con ${one(employee?.profiles)?.full_name ?? ""}\n\n¡Te esperamos!`
       )}`
     : null;
 
