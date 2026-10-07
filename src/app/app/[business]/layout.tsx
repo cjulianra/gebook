@@ -23,7 +23,7 @@ export default async function BusinessLayout({
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("id, name, slug, business_type, logo_url")
+    .select("id, name, slug, business_type, logo_url, show_prices")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -31,7 +31,7 @@ export default async function BusinessLayout({
 
   const { data: membershipRaw } = await supabase
     .from("business_members")
-    .select("id, role, status, employee_details(can_create_bookings)")
+    .select("id, role, status, employee_details(can_create_bookings, can_view_clients)")
     .eq("business_id", business.id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -42,12 +42,13 @@ export default async function BusinessLayout({
     id: string;
     role: MemberRole;
     status: string;
-    employee_details: { can_create_bookings: boolean } | { can_create_bookings: boolean }[] | null;
+    employee_details: { can_create_bookings: boolean; can_view_clients: boolean } | { can_create_bookings: boolean; can_view_clients: boolean }[] | null;
   };
 
   if (membership.status !== "active") redirect("/app");
   const employeeDetails = Array.isArray(membership.employee_details) ? membership.employee_details[0] : membership.employee_details;
   const canCreateBookings = membership.role !== "employee" || (employeeDetails?.can_create_bookings ?? true);
+  const canViewClients = membership.role !== "employee" || (employeeDetails?.can_view_clients ?? true);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -79,7 +80,7 @@ export default async function BusinessLayout({
       <BusinessProvider
         value={{
           business,
-          membership: { id: membership.id, role: membership.role, canCreateBookings },
+          membership: { id: membership.id, role: membership.role, canCreateBookings, canViewClients },
           profile,
           onboardingStep,
         }}

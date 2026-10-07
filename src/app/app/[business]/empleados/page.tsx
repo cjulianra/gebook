@@ -12,7 +12,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
     await Promise.all([
       supabase
         .from("business_members")
-        .select("id, role, status, created_at, profiles(id, full_name, email, avatar_url), employee_details(phone, specialty, photo_url, commission_rate, can_create_bookings)")
+        .select("id, role, status, created_at, profiles(id, full_name, email, avatar_url), employee_details(phone, specialty, photo_url, commission_rate, can_create_bookings, can_view_clients)")
         .eq("business_id", business.id)
         .eq("role", "employee")
         .order("created_at", { ascending: false }),

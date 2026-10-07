@@ -25,8 +25,8 @@ interface Member {
   status: string;
   profiles: { id: string; full_name: string; email: string; avatar_url: string | null } | { id: string; full_name: string; email: string; avatar_url: string | null }[];
   employee_details:
-    | { phone: string | null; specialty: string | null; photo_url: string | null; commission_rate: number; can_create_bookings: boolean }
-    | { phone: string | null; specialty: string | null; photo_url: string | null; commission_rate: number; can_create_bookings: boolean }[]
+    | { phone: string | null; specialty: string | null; photo_url: string | null; commission_rate: number; can_create_bookings: boolean; can_view_clients: boolean }
+    | { phone: string | null; specialty: string | null; photo_url: string | null; commission_rate: number; can_create_bookings: boolean; can_view_clients: boolean }[]
     | null;
 }
 
@@ -264,7 +264,7 @@ export function EmployeesClient({
                 const details = one(m.employee_details);
                 return {
                   ...m,
-                  employee_details: { ...(details ?? { phone: null, specialty: null, photo_url: null, can_create_bookings: true }), commission_rate: rate },
+                  employee_details: { ...(details ?? { phone: null, specialty: null, photo_url: null, can_create_bookings: true, can_view_clients: true }), commission_rate: rate },
                 };
               })
             );
@@ -274,14 +274,18 @@ export function EmployeesClient({
             setPayouts((prev) => [payout, ...prev]);
             showToast("Pago registrado.");
           }}
-          onPermissionSaved={(canCreateBookings: boolean) => {
+          onPermissionSaved={(canCreateBookings: boolean, canViewClients: boolean) => {
             setMembers((prev) =>
               prev.map((m) => {
                 if (m.id !== configFor.id) return m;
                 const details = one(m.employee_details);
                 return {
                   ...m,
-                  employee_details: { ...(details ?? { phone: null, specialty: null, photo_url: null, commission_rate: 40 }), can_create_bookings: canCreateBookings },
+                  employee_details: {
+                    ...(details ?? { phone: null, specialty: null, photo_url: null, commission_rate: 40, can_create_bookings: true, can_view_clients: true }),
+                    can_create_bookings: canCreateBookings,
+                    can_view_clients: canViewClients,
+                  },
                 };
               })
             );
@@ -294,7 +298,7 @@ export function EmployeesClient({
                 const details = one(m.employee_details);
                 return {
                   ...m,
-                  employee_details: { ...(details ?? { phone: null, specialty: null, commission_rate: 40, can_create_bookings: true }), photo_url: photoUrl },
+                  employee_details: { ...(details ?? { phone: null, specialty: null, commission_rate: 40, can_create_bookings: true, can_view_clients: true }), photo_url: photoUrl },
                 };
               })
             );
@@ -362,7 +366,7 @@ function InviteModal({
         role: "employee",
         status: "active",
         profiles: { id: result.data.user_id, full_name: fullName, email: "", avatar_url: null },
-        employee_details: { phone, specialty: null, photo_url: null, commission_rate: 40, can_create_bookings: canCreateBookings },
+        employee_details: { phone, specialty: null, photo_url: null, commission_rate: 40, can_create_bookings: canCreateBookings, can_view_clients: true },
       },
       selectedServiceIds
     );
@@ -483,7 +487,7 @@ function EmployeeConfigModal({
   onCommissionSaved: (rate: number) => void;
   onPayoutRegistered: (payout: Payout) => void;
   onPhotoSaved: (photoUrl: string) => void;
-  onPermissionSaved: (canCreateBookings: boolean) => void;
+  onPermissionSaved: (canCreateBookings: boolean, canViewClients: boolean) => void;
   onDeactivate: () => void;
 }) {
   const profile = one(member.profiles)!;
@@ -628,17 +632,18 @@ function CommissionPanel({ member, onSaved }: { member: Member; onSaved: (rate: 
   );
 }
 
-function PermissionsPanel({ member, onSaved }: { member: Member; onSaved: (canCreateBookings: boolean) => void }) {
-  const current = one(member.employee_details)?.can_create_bookings ?? true;
-  const [canCreateBookings, setCanCreateBookings] = useState(current);
+function PermissionsPanel({ member, onSaved }: { member: Member; onSaved: (canCreateBookings: boolean, canViewClients: boolean) => void }) {
+  const details = one(member.employee_details);
+  const [canCreateBookings, setCanCreateBookings] = useState(details?.can_create_bookings ?? true);
+  const [canViewClients, setCanViewClients] = useState(details?.can_view_clients ?? true);
   const [loading, setLoading] = useState(false);
 
   async function handleSave() {
     setLoading(true);
     const supabase = createClient();
-    await supabase.from("employee_details").upsert({ business_member_id: member.id, can_create_bookings: canCreateBookings });
+    await supabase.from("employee_details").upsert({ business_member_id: member.id, can_create_bookings: canCreateBookings, can_view_clients: canViewClients });
     setLoading(false);
-    onSaved(canCreateBookings);
+    onSaved(canCreateBookings, canViewClients);
   }
 
   return (
@@ -654,6 +659,20 @@ function PermissionsPanel({ member, onSaved }: { member: Member; onSaved: (canCr
           <span className="block text-sm font-medium text-[var(--color-ink-900)]">Puede crear reservas</span>
           <span className="block text-xs text-[var(--color-ink-500)]">
             Si lo desactivas, solo el dueño o un administrador podrán agendarle citas a {one(member.profiles)?.full_name.split(" ")[0]}.
+          </span>
+        </span>
+      </label>
+      <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] px-3 py-2.5">
+        <input
+          type="checkbox"
+          checked={canViewClients}
+          onChange={(e) => setCanViewClients(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+        />
+        <span>
+          <span className="block text-sm font-medium text-[var(--color-ink-900)]">Puede ver Clientes</span>
+          <span className="block text-xs text-[var(--color-ink-500)]">
+            Si lo desactivas, {one(member.profiles)?.full_name.split(" ")[0]} no verá la sección de Clientes del negocio.
           </span>
         </span>
       </label>

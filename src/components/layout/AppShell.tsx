@@ -22,7 +22,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const items = NAV_ITEMS.filter((item) => item.roles.includes(membership.role));
+  const items = NAV_ITEMS.filter(
+    (item) => item.roles.includes(membership.role) && (item.href !== "clientes" || membership.canViewClients)
+  );
   const primaryItems = items.filter((item) => PRIMARY_MOBILE_HREFS.includes(item.href));
   const moreItems = items.filter((item) => !PRIMARY_MOBILE_HREFS.includes(item.href));
   const base = `/app/${business.slug}`;

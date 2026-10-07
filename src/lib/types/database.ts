@@ -28,6 +28,7 @@ type BusinessRow = {
   timezone: string;
   logo_url: string | null;
   is_active: boolean;
+  show_prices: boolean;
   created_at: string;
 }
 
@@ -48,6 +49,7 @@ type EmployeeDetailsRow = {
   color_tag: string | null;
   commission_rate: number;
   can_create_bookings: boolean;
+  can_view_clients: boolean;
   access_code: string | null;
 }
 

@@ -36,6 +36,8 @@ function Inner({ business }: { business: Business }) {
   const [saving, setSaving] = useState(false);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showPrices, setShowPrices] = useState(business.show_prices);
+  const [savingPrices, setSavingPrices] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- window solo existe en el cliente; se llena después del primer render para evitar un mismatch de hidratación
@@ -92,6 +94,20 @@ function Inner({ business }: { business: Business }) {
     showToast("Logo actualizado.");
   }
 
+  async function handleShowPricesChange(checked: boolean) {
+    setShowPrices(checked);
+    setSavingPrices(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("businesses").update({ show_prices: checked }).eq("id", business.id);
+    setSavingPrices(false);
+    if (error) {
+      setShowPrices(!checked);
+      showToast("No pudimos guardar el cambio.", "danger");
+      return;
+    }
+    showToast(checked ? "Los precios ahora se muestran a los clientes." : "Los precios ya no se muestran a los clientes.");
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return setError("El nombre es obligatorio.");
@@ -138,6 +154,30 @@ function Inner({ business }: { business: Business }) {
               {copied ? "¡Copiado!" : "Copiar link"}
             </Button>
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Precios</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={showPrices}
+              disabled={savingPrices}
+              onChange={(e) => handleShowPricesChange(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+            />
+            <span>
+              <span className="block text-sm font-medium text-[var(--color-ink-900)]">Mostrar precios a los clientes</span>
+              <span className="block text-xs text-[var(--color-ink-500)]">
+                Si lo desactivas, tus clientes verán el nombre y la duración de cada servicio, pero no el precio, en la página pública de
+                reservas.
+              </span>
+            </span>
+          </label>
         </CardBody>
       </Card>
 

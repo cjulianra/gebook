@@ -4,8 +4,8 @@ import { createContext, useContext } from "react";
 import type { MemberRole } from "@/lib/types/database";
 
 export interface BusinessContextValue {
-  business: { id: string; name: string; slug: string; business_type: string | null; logo_url: string | null };
-  membership: { id: string; role: MemberRole; canCreateBookings: boolean };
+  business: { id: string; name: string; slug: string; business_type: string | null; logo_url: string | null; show_prices: boolean };
+  membership: { id: string; role: MemberRole; canCreateBookings: boolean; canViewClients: boolean };
   profile: { id: string; full_name: string; email: string; avatar_url: string | null };
   /** Paso del onboarding inicial que falta completar, o null si ya está listo. */
   onboardingStep: "servicios" | "empleados" | null;

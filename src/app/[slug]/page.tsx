@@ -8,7 +8,7 @@ export default async function PublicBusinessPage({ params }: { params: Promise<{
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("id, name, slug, business_type, phone, address, city, neighborhood, logo_url")
+    .select("id, name, slug, business_type, phone, address, city, neighborhood, logo_url, show_prices")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();

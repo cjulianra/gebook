@@ -28,6 +28,7 @@ interface Business {
   city: string | null;
   neighborhood: string | null;
   logo_url: string | null;
+  show_prices: boolean;
 }
 interface Service {
   id: string;
@@ -270,7 +271,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 md:px-8">
         {step === 1 && (
-          <StepServicio services={services} selectedId={serviceId} onSelect={selectService} />
+          <StepServicio services={services} selectedId={serviceId} onSelect={selectService} showPrices={business.show_prices} />
         )}
 
         {step === 2 && service && (
@@ -305,6 +306,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
             employee={employee}
             day={day}
             time={time}
+            showPrices={business.show_prices}
             authChecked={authChecked}
             loggedIn={!!userEmail}
             confirming={confirming}
@@ -361,7 +363,17 @@ function Stepper({ step }: { step: Step }) {
   );
 }
 
-function StepServicio({ services, selectedId, onSelect }: { services: Service[]; selectedId: string; onSelect: (id: string) => void }) {
+function StepServicio({
+  services,
+  selectedId,
+  onSelect,
+  showPrices,
+}: {
+  services: Service[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  showPrices: boolean;
+}) {
   return (
     <Card>
       <CardBody>
@@ -389,7 +401,7 @@ function StepServicio({ services, selectedId, onSelect }: { services: Service[];
                       {s.duration_minutes} min{s.category ? ` · ${s.category}` : ""}
                     </span>
                   </span>
-                  <span className="text-sm font-semibold text-[var(--color-ink-900)]">{currency.format(s.price)}</span>
+                  {showPrices && <span className="text-sm font-semibold text-[var(--color-ink-900)]">{currency.format(s.price)}</span>}
                 </button>
               );
             })}
@@ -510,6 +522,7 @@ function StepConfirmar({
   employee,
   day,
   time,
+  showPrices,
   authChecked,
   loggedIn,
   confirming,
@@ -526,6 +539,7 @@ function StepConfirmar({
   employee: Employee;
   day: string;
   time: string;
+  showPrices: boolean;
   authChecked: boolean;
   loggedIn: boolean;
   confirming: boolean;
@@ -549,7 +563,7 @@ function StepConfirmar({
           </div>
         </div>
 
-        <Row label="Servicio" value={`${service.name} · ${currency.format(service.price)}`} onEdit={() => onEdit(1)} />
+        <Row label="Servicio" value={showPrices ? `${service.name} · ${currency.format(service.price)}` : service.name} onEdit={() => onEdit(1)} />
         <Row label="Profesional" value={employee.full_name} onEdit={() => onEdit(2)} />
         <Row
           label="Fecha y hora"
