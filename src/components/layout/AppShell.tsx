@@ -38,8 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="gradient-canvas min-h-screen md:flex">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col px-3 py-4 md:flex">
-        <div className="flex items-center justify-center rounded-[var(--radius-lg)] border border-[var(--color-border)] p-1.5">
-          <BusinessMark name={business.name} logoUrl={business.logo_url} size={88} fill />
+        <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
+          <BusinessMark name={business.name} logoUrl={business.logo_url} size={70} fill />
         </div>
 
         <nav className="flex-1 space-y-1 py-4">
@@ -244,7 +244,7 @@ export function BusinessMark({
     if (fill) {
       return (
         // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
-        <img src={logoUrl} alt={name} className="w-full rounded-[8px] object-contain" style={{ height: size }} />
+        <img src={logoUrl} alt={name} className="w-full rounded-[var(--radius-md)] object-contain" style={{ height: size }} />
       );
     }
     return (
