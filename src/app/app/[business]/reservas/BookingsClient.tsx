@@ -52,7 +52,7 @@ export function BookingsClient({
   assignments: Assignment[];
 }) {
   const router = useRouter();
-  const { membership, profile } = useBusiness();
+  const { business, membership, profile } = useBusiness();
   const isEmployee = membership.role === "employee";
   const [bookings, setBookings] = useState(initialBookings);
   const [clients, setClients] = useState(initialClients);
@@ -110,6 +110,7 @@ export function BookingsClient({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+      {!isEmployee && <PublicLinkPill slug={business.slug} />}
       <PageHeader
         title={isEmployee ? profile.full_name : "Agenda"}
         description={isEmployee ? "Tu agenda, día a día." : "Las reservas de tu negocio, día a día."}
@@ -200,6 +201,46 @@ export function BookingsClient({
         danger
       />
     </div>
+  );
+}
+
+function PublicLinkPill({ slug }: { slug: string }) {
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState(false);
+  const showToast = useToast();
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- window solo existe en el cliente; se llena después del primer render para evitar un mismatch de hidratación
+    setOrigin(window.location.origin);
+  }, []);
+
+  const publicUrl = origin ? `${origin}/${slug}` : `/${slug}`;
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast("No pudimos copiar. Selecciona el texto manualmente.", "danger");
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="group flex max-w-full items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pl-3 pr-2 text-xs text-[var(--color-ink-500)] transition-colors hover:bg-[var(--color-canvas)]"
+    >
+      <span className="truncate">{publicUrl}</span>
+      <span
+        className={cn(
+          "shrink-0 rounded-[var(--radius-pill)] px-2 py-0.5 font-medium transition-colors",
+          copied ? "bg-[var(--color-success-soft)] text-[var(--color-success)]" : "bg-[var(--color-canvas)] text-[var(--color-ink-700)] group-hover:bg-[var(--color-border)]"
+        )}
+      >
+        {copied ? "¡Copiado!" : "Copiar"}
+      </span>
+    </button>
   );
 }
 
