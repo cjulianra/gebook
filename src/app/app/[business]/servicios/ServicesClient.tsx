@@ -89,13 +89,13 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => handleToggleActive(service)}>
+                  <Button size="sm" variant="neutral-soft" onClick={() => handleToggleActive(service)}>
                     {service.is_active ? "Desactivar" : "Activar"}
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => openEdit(service)}>
+                  <Button size="sm" variant="info-soft" onClick={() => openEdit(service)}>
                     Editar
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-[var(--color-danger)]" onClick={() => setToDelete(service)}>
+                  <Button size="sm" variant="danger-soft" onClick={() => setToDelete(service)}>
                     Eliminar
                   </Button>
                 </div>
