@@ -8,9 +8,9 @@ import { useBusiness } from "@/lib/context/BusinessContext";
 import { BookingRow } from "@/components/bookings/BookingRow";
 import { EditBookingModal } from "@/components/bookings/EditBookingModal";
 import { ConfirmDialog } from "@/components/ui/Modal";
-import { type Assignment, type Booking, type Employee, type Service, NEXT_STATUS } from "@/components/bookings/types";
+import { type Assignment, type Booking, type Employee, type Service } from "@/components/bookings/types";
 
-/** Misma fila y mismas acciones (Confirmar/Completar, Editar, Cancelar) que la Agenda, para la lista "Agenda de hoy" del Panel. */
+/** Misma fila y mismas acciones (Editar, Cancelar) que la Agenda, para la lista "Agenda de hoy" del Panel. */
 export function TodayAgendaClient({
   businessId,
   initialBookings,
@@ -29,18 +29,6 @@ export function TodayAgendaClient({
   const [toCancel, setToCancel] = useState<Booking | null>(null);
   const [toEdit, setToEdit] = useState<Booking | null>(null);
   const showToast = useToast();
-
-  async function advanceStatus(booking: Booking) {
-    const next = NEXT_STATUS[booking.status];
-    if (!next) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("bookings").update({ status: next }).eq("id", booking.id);
-    if (error) {
-      showToast("No pudimos actualizar la reserva.", "danger");
-      return;
-    }
-    setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: next } : b)));
-  }
 
   async function handleCancel() {
     if (!toCancel) return;
@@ -65,7 +53,6 @@ export function TodayAgendaClient({
           <BookingRow
             key={booking.id}
             booking={booking}
-            onAdvance={advanceStatus}
             onEdit={setToEdit}
             onCancel={setToCancel}
           />

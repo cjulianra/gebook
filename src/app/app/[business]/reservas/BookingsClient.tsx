@@ -25,7 +25,6 @@ import {
   type Client,
   type Employee,
   type Service,
-  NEXT_STATUS,
   addMinutes,
   capitalizeFirst,
   one,
@@ -75,18 +74,6 @@ export function BookingsClient({
     () => (employeeFilter === "all" ? bookings : bookings.filter((b) => b.business_member_id === employeeFilter)),
     [bookings, employeeFilter]
   );
-
-  async function advanceStatus(booking: Booking) {
-    const next = NEXT_STATUS[booking.status];
-    if (!next) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("bookings").update({ status: next }).eq("id", booking.id);
-    if (error) {
-      showToast("No pudimos actualizar la reserva.", "danger");
-      return;
-    }
-    setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: next } : b)));
-  }
 
   async function handleCancel() {
     if (!toCancel) return;
@@ -150,7 +137,6 @@ export function BookingsClient({
               <BookingRow
                 key={booking.id}
                 booking={booking}
-                onAdvance={advanceStatus}
                 onEdit={setToEdit}
                 onCancel={setToCancel}
               />

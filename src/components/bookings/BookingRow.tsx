@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { BookingStatusBadge } from "@/components/ui/Badge";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { BOGOTA_TZ } from "@/lib/utils/dateRange";
-import { type Booking, WhatsAppIcon, NEXT_LABEL, NEXT_STATUS, one } from "./types";
+import { type Booking, WhatsAppIcon, one } from "./types";
 
 // Colombia (57) por defecto: la mayoría de clientes registran su número a 10
 // dígitos sin indicativo. Si ya viene con uno, se respeta tal cual.
@@ -18,12 +18,10 @@ function toWhatsAppNumber(phone: string) {
 /** Fila de reserva compartida entre Agenda y "Agenda de hoy" del Panel — mismo look y mismas acciones en los dos lugares. */
 export function BookingRow({
   booking,
-  onAdvance,
   onEdit,
   onCancel,
 }: {
   booking: Booking;
-  onAdvance: (booking: Booking) => void;
   onEdit: (booking: Booking) => void;
   onCancel: (booking: Booking) => void;
 }) {
@@ -31,7 +29,6 @@ export function BookingRow({
   const client = one(booking.clients);
   const service = one(booking.services);
   const employee = one(booking.business_members);
-  const next = NEXT_STATUS[booking.status];
   const editable = booking.status !== "completed" && booking.status !== "cancelled";
 
   const startTime = new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
@@ -95,11 +92,6 @@ export function BookingRow({
       <div className="flex flex-wrap items-center gap-2">
         {editable ? (
           <>
-            {next && (
-              <Button size="xs" variant="info-soft" onClick={() => onAdvance(booking)}>
-                {NEXT_LABEL[booking.status]}
-              </Button>
-            )}
             <Button size="xs" variant="neutral-soft" onClick={() => onEdit(booking)}>
               Editar
             </Button>
