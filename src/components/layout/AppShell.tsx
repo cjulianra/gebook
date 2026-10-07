@@ -242,9 +242,12 @@ export function BusinessMark({
     // solos (sin nombre al lado), con una esquina apenas redondeada — no el
     // óvalo/círculo de `rounded="full"`, que recortaría un logo horizontal.
     if (fill) {
+      // Alto automático (no fijo + object-contain) para que el elemento <img>
+      // mida exactamente lo mismo que el logo visible — si no, el radio redondea
+      // una caja invisible más alta que el rectángulo real y no se nota.
       return (
         // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
-        <img src={logoUrl} alt={name} className="w-full rounded-[8px] object-contain" style={{ height: size }} />
+        <img src={logoUrl} alt={name} className="w-full rounded-[16px]" style={{ maxHeight: size }} />
       );
     }
     return (
