@@ -5,6 +5,7 @@ import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/utils/cn";
 import { bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
@@ -139,7 +140,7 @@ export default async function ReportesPage({
             {/* Desktop/tablet: tabla (grid, no <table> real — cada fila es un único link navegable) */}
             <div className="hidden overflow-x-auto sm:block">
               <div className="min-w-[640px] text-sm">
-                <div className="grid grid-cols-[1.6fr_0.8fr_1.2fr_0.8fr_1fr] border-b border-[var(--color-border)] px-6 py-3 text-left text-xs text-[var(--color-ink-500)]">
+                <div className="grid grid-cols-[1.4fr_1.1fr_1.2fr_1.1fr_1.2fr] border-b border-[var(--color-border)] px-6 py-3 text-left text-xs text-[var(--color-ink-500)]">
                   <span className="font-medium">Empleado</span>
                   <span className="font-medium">Servicios</span>
                   <span className="font-medium">Ingresos generados</span>
@@ -151,16 +152,24 @@ export default async function ReportesPage({
                     <Link
                       key={e.id}
                       href={`${base}/${e.id}`}
-                      className="grid grid-cols-[1.6fr_0.8fr_1.2fr_0.8fr_1fr] items-center px-6 py-3 hover:bg-[var(--color-canvas)]"
+                      className="grid grid-cols-[1.4fr_1.1fr_1.2fr_1.1fr_1.2fr] items-center px-6 py-3 hover:bg-[var(--color-canvas)]"
                     >
                       <span className="flex items-center gap-2 font-medium text-[var(--color-ink-900)]">
                         <Avatar name={e.name} src={e.photoUrl} size={28} />
                         {e.name}
                       </span>
-                      <span className="text-[var(--color-ink-700)]">{e.count}</span>
-                      <span className="text-[var(--color-ink-700)]">{currency.format(e.revenue)}</span>
-                      <span className="text-[var(--color-ink-500)]">{e.rate}%</span>
-                      <span className="font-medium text-[var(--color-ink-900)]">{currency.format(e.commission)}</span>
+                      <Badge tone="info" className="w-fit">
+                        {e.count} servicios
+                      </Badge>
+                      <Badge tone="neutral" className="w-fit">
+                        {currency.format(e.revenue)}
+                      </Badge>
+                      <Badge tone="accent" className="w-fit">
+                        Comisión {e.rate}%
+                      </Badge>
+                      <Badge tone="danger" className="w-fit">
+                        {currency.format(e.commission)}
+                      </Badge>
                     </Link>
                   ))}
                 </div>
@@ -175,16 +184,23 @@ export default async function ReportesPage({
                   href={`${base}/${e.id}`}
                   className="block space-y-2 px-5 py-4 active:bg-[var(--color-canvas)]"
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="flex items-center gap-2 font-medium text-[var(--color-ink-900)]">
-                      <Avatar name={e.name} src={e.photoUrl} size={28} />
-                      {e.name}
-                    </p>
-                    <span className="text-xs text-[var(--color-ink-500)]">{e.rate}% comisión</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-ink-500)]">{e.count} servicios · {currency.format(e.revenue)}</span>
-                    <span className="font-medium text-[var(--color-ink-900)]">{currency.format(e.commission)}</span>
+                  <p className="flex items-center gap-2 font-medium text-[var(--color-ink-900)]">
+                    <Avatar name={e.name} src={e.photoUrl} size={28} />
+                    {e.name}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge tone="info" className="shrink-0">
+                      {e.count} servicios
+                    </Badge>
+                    <Badge tone="neutral" className="shrink-0">
+                      {currency.format(e.revenue)}
+                    </Badge>
+                    <Badge tone="accent" className="shrink-0">
+                      Comisión {e.rate}%
+                    </Badge>
+                    <Badge tone="danger" className="shrink-0">
+                      A pagar {currency.format(e.commission)}
+                    </Badge>
                   </div>
                 </Link>
               ))}
