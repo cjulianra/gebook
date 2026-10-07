@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
 import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
 import { cn } from "@/lib/utils/cn";
-import { inviteEmployee, removeEmployee } from "./actions";
+import { inviteEmployee, createEmployeeWithPassword, removeEmployee } from "./actions";
 
 interface Member {
   id: string;
@@ -192,8 +192,6 @@ export function EmployeesClient({
         onInvited={(member, serviceIds) => {
           setMembers((prev) => [member, ...prev]);
           setAssignments((prev) => [...prev, ...serviceIds.map((service_id) => ({ business_member_id: member.id, service_id }))]);
-          setInviteOpen(false);
-          showToast("Invitación enviada.");
           refreshOnboarding?.();
         }}
       />
@@ -282,6 +280,7 @@ function InviteModal({
   services: Service[];
   onInvited: (member: Member, serviceIds: string[]) => void;
 }) {
+  const [method, setMethod] = useState<"email" | "password">("email");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -289,20 +288,35 @@ function InviteModal({
   const [canCreateBookings, setCanCreateBookings] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const showToast = useToast();
 
   function toggleService(id: string) {
     setSelectedServiceIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  }
+
+  function resetForm() {
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setSelectedServiceIds([]);
+    setCanCreateBookings(true);
+    setCredentials(null);
+    setCopied(false);
+    setMethod("email");
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const result = await inviteEmployee({ businessId, email, fullName, phone, canCreateBookings, serviceIds: selectedServiceIds });
+    const action = method === "email" ? inviteEmployee : createEmployeeWithPassword;
+    const result = await action({ businessId, email, fullName, phone, canCreateBookings, serviceIds: selectedServiceIds });
     setLoading(false);
 
     if (result.error || !result.data) {
-      setError(result.error ?? "No pudimos invitar al empleado.");
+      setError(result.error ?? "No pudimos crear al empleado.");
       return;
     }
 
@@ -316,30 +330,112 @@ function InviteModal({
       },
       selectedServiceIds
     );
-    setFullName("");
-    setEmail("");
-    setPhone("");
-    setSelectedServiceIds([]);
-    setCanCreateBookings(true);
+
+    if (result.tempPassword) {
+      // No cerramos todavía: hay que mostrarle la contraseña al dueño una sola vez.
+      setCredentials({ email, password: result.tempPassword });
+      return;
+    }
+
+    showToast("Invitación enviada.");
+    resetForm();
+    onClose();
+  }
+
+  async function handleCopy() {
+    if (!credentials) return;
+    try {
+      await navigator.clipboard.writeText(`Correo: ${credentials.email}\nContraseña: ${credentials.password}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast("No pudimos copiar. Selecciona el texto manualmente.", "danger");
+    }
+  }
+
+  function handleClose() {
+    resetForm();
+    onClose();
+  }
+
+  if (credentials) {
+    return (
+      <Modal
+        open={open}
+        onClose={handleClose}
+        title="Empleado creado"
+        footer={<Button onClick={handleClose}>Listo</Button>}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--color-ink-700)]">
+            Comparte estos datos de acceso con tu empleado (por WhatsApp, en persona, etc.). Podrá cambiar la contraseña después desde
+            su perfil.
+          </p>
+          <div className="space-y-2 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-canvas)] p-4 text-sm">
+            <p>
+              <span className="text-[var(--color-ink-500)]">Correo:</span> <span className="font-medium">{credentials.email}</span>
+            </p>
+            <p>
+              <span className="text-[var(--color-ink-500)]">Contraseña:</span>{" "}
+              <span className="font-mono font-medium">{credentials.password}</span>
+            </p>
+          </div>
+          <Button variant="secondary" className="w-full" onClick={handleCopy}>
+            {copied ? "¡Copiado!" : "Copiar datos"}
+          </Button>
+        </div>
+      </Modal>
+    );
   }
 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title="Crear empleado"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={handleClose}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Enviando…" : "Enviar invitación"}
+            {loading ? "Creando…" : method === "email" ? "Enviar invitación" : "Crear empleado"}
           </Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label>¿Cómo quieres darle acceso?</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setMethod("email")}
+              className={cn(
+                "rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-colors",
+                method === "email"
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
+                  : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+              )}
+            >
+              <span className="block font-medium text-[var(--color-ink-900)]">Por correo</span>
+              <span className="block text-xs text-[var(--color-ink-500)]">Le llega un enlace para crear su contraseña.</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMethod("password")}
+              className={cn(
+                "rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-colors",
+                method === "password"
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
+                  : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+              )}
+            >
+              <span className="block font-medium text-[var(--color-ink-900)]">Con contraseña</span>
+              <span className="block text-xs text-[var(--color-ink-500)]">Tú le compartes el acceso. No depende del correo.</span>
+            </button>
+          </div>
+        </div>
         <div>
           <Label htmlFor="fullName">Nombre completo</Label>
           <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Laura Gómez" />
@@ -391,7 +487,9 @@ function InviteModal({
         </label>
         <FieldError>{error ?? undefined}</FieldError>
         <p className="text-xs text-[var(--color-ink-500)]">
-          Enviaremos un correo de invitación para que cree su contraseña y acceda a su agenda.
+          {method === "email"
+            ? "Enviaremos un correo de invitación para que cree su contraseña y acceda a su agenda."
+            : "Se crea la cuenta al instante con una contraseña temporal que verás en el siguiente paso."}
         </p>
       </form>
     </Modal>

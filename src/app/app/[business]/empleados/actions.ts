@@ -8,6 +8,8 @@ type BusinessMemberRow = Database["public"]["Tables"]["business_members"]["Row"]
 
 interface InviteResult {
   data?: BusinessMemberRow;
+  /** Solo presente cuando se crea con contraseña temporal (sin correo) — para mostrarla una vez al dueño. */
+  tempPassword?: string;
   error?: string;
 }
 
@@ -18,6 +20,14 @@ interface InviteEmployeeInput {
   phone?: string;
   canCreateBookings?: boolean;
   serviceIds?: string[];
+}
+
+function generateTempPassword() {
+  // 10 caracteres, fácil de leer/dictar: sin 0/O/1/l ni símbolos.
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
 }
 
 async function assertIsBusinessAdmin(businessId: string) {
@@ -58,6 +68,38 @@ export async function inviteEmployee(input: InviteEmployeeInput): Promise<Invite
   }
 
   return linkEmployee(admin, input, invited.user.id);
+}
+
+/**
+ * Alternativa a inviteEmployee que no depende del envío de correo: crea la
+ * cuenta ya confirmada con una contraseña temporal que el dueño comparte
+ * directamente (WhatsApp, en persona, etc.). Útil si el correo del negocio
+ * aún no tiene SMTP configurado o el empleado no revisa su correo seguido.
+ */
+export async function createEmployeeWithPassword(input: InviteEmployeeInput): Promise<InviteResult> {
+  await assertIsBusinessAdmin(input.businessId);
+
+  const admin = createAdminClient();
+  const tempPassword = generateTempPassword();
+
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: { full_name: input.fullName },
+  });
+
+  if (createError || !created.user) {
+    const { data: existingProfile } = await admin.from("profiles").select("id").eq("email", input.email).maybeSingle();
+    if (!existingProfile) {
+      return { error: createError?.message === "User already registered" ? "Ese correo ya tiene una cuenta." : "No pudimos crear la cuenta." };
+    }
+    return linkEmployee(admin, input, existingProfile.id);
+  }
+
+  const result = await linkEmployee(admin, input, created.user.id);
+  if (result.error) return result;
+  return { ...result, tempPassword };
 }
 
 async function linkEmployee(
