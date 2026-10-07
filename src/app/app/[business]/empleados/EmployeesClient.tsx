@@ -103,12 +103,6 @@ export function EmployeesClient({
                 queda alineada de verdad entre empleados (no una fila flex por
                 separado, que deja cada dato donde le quepa). */}
             <div className="hidden md:block">
-              <div className="grid grid-cols-[minmax(0,1fr)_110px_160px_auto] gap-3 border-b border-[var(--color-border)] px-5 py-2.5 text-xs font-medium text-[var(--color-ink-500)]">
-                <span>Empleado</span>
-                <span>Comisión</span>
-                <span>Estado</span>
-                <span className="sr-only">Acciones</span>
-              </div>
               {members.map((member) => {
                 const profile = one(member.profiles)!;
                 const details = one(member.employee_details);
@@ -119,14 +113,14 @@ export function EmployeesClient({
                 return (
                   <div
                     key={member.id}
-                    className="grid grid-cols-[minmax(0,1fr)_110px_160px_auto] items-center gap-3 border-b border-[var(--color-border)] px-5 py-3 last:border-b-0"
+                    className="grid grid-cols-[minmax(0,1fr)_150px_160px_auto] items-center gap-3 border-b border-[var(--color-border)] px-5 py-3 last:border-b-0"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
                       <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
                     </div>
                     <Badge tone="accent" className="w-fit">
-                      {details?.commission_rate ?? 40}%
+                      Comisión {details?.commission_rate ?? 40}%
                     </Badge>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {member.status === "inactive" && <Badge tone="neutral">Inactivo</Badge>}
