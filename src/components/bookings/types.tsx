@@ -63,8 +63,8 @@ export const NEXT_STATUS: Partial<Record<BookingStatus, BookingStatus>> = {
   in_progress: "completed",
 };
 export const NEXT_LABEL: Partial<Record<BookingStatus, string>> = {
-  confirmed: "Completar",
-  in_progress: "Completar",
+  confirmed: "Completada",
+  in_progress: "Completada",
 };
 
 export function DotsIcon({ className }: { className?: string }) {

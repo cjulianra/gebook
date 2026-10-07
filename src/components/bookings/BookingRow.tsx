@@ -93,8 +93,7 @@ export function BookingRow({
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <BookingStatusBadge status={booking.status} />
-        {editable && (
+        {editable ? (
           <>
             {next && (
               <Button size="xs" variant="info-soft" onClick={() => onAdvance(booking)}>
@@ -108,6 +107,8 @@ export function BookingRow({
               Cancelar
             </Button>
           </>
+        ) : (
+          <BookingStatusBadge status={booking.status} />
         )}
       </div>
     </div>
