@@ -2,8 +2,17 @@
 
 import { Avatar } from "@/components/ui/Avatar";
 import { BookingStatusBadge } from "@/components/ui/Badge";
+import { useBusiness } from "@/lib/context/BusinessContext";
 import { BOGOTA_TZ } from "@/lib/utils/dateRange";
-import { type Booking, DotsIcon, NEXT_LABEL, NEXT_STATUS, one } from "./types";
+import { type Booking, DotsIcon, WhatsAppIcon, NEXT_LABEL, NEXT_STATUS, one } from "./types";
+
+// Colombia (57) por defecto: la mayoría de clientes registran su número a 10
+// dígitos sin indicativo. Si ya viene con uno, se respeta tal cual.
+function toWhatsAppNumber(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `57${digits}`;
+  return digits;
+}
 
 /** Fila de reserva compartida entre Agenda y "Agenda de hoy" del Panel — mismo look y mismas acciones en los dos lugares. */
 export function BookingRow({
@@ -21,22 +30,50 @@ export function BookingRow({
   onEdit: (booking: Booking) => void;
   onCancel: (booking: Booking) => void;
 }) {
+  const { business } = useBusiness();
   const client = one(booking.clients);
   const service = one(booking.services);
   const employee = one(booking.business_members);
   const next = NEXT_STATUS[booking.status];
   const editable = booking.status !== "completed" && booking.status !== "cancelled";
 
+  const startTime = new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
+  const endTime = new Date(booking.end_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
+  const dateLabel = new Date(booking.start_at).toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: BOGOTA_TZ,
+  });
+
+  const whatsappHref = client?.phone
+    ? `https://wa.me/${toWhatsAppNumber(client.phone)}?text=${encodeURIComponent(
+        `Hola ${client.first_name} 👋, te confirmamos tu reserva en ${business.name}:\n\n📅 ${dateLabel}\n🕐 ${startTime} – ${endTime}\n💇 ${service?.name ?? ""}\n👤 Con ${one(employee?.profiles)?.full_name ?? ""}\n\n¡Te esperamos!`
+      )}`
+    : null;
+
   return (
     <div className="px-5 py-4">
       <div className="flex items-center justify-between gap-3">
         <p className="whitespace-nowrap text-sm font-bold text-[var(--color-ink-900)]">
-          {new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
+          {startTime}
           {" – "}
-          {new Date(booking.end_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ })}
+          {endTime}
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <BookingStatusBadge status={booking.status} />
+          {whatsappHref && (
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Enviar resumen por WhatsApp"
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[#25D366] hover:bg-[var(--color-canvas)]"
+            >
+              <WhatsAppIcon className="h-5 w-5" />
+            </a>
+          )}
           {editable && (
             <div className="relative">
               <button
