@@ -108,7 +108,6 @@ export default async function MiPerfilPage({
       businessId={business.id}
       memberId={member.id}
       fullName={profile?.full_name ?? ""}
-      email={profile?.email ?? ""}
       specialty={details?.specialty ?? null}
       photoUrl={details?.photo_url ?? null}
       commissionRate={rate}

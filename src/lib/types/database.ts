@@ -48,6 +48,7 @@ type EmployeeDetailsRow = {
   color_tag: string | null;
   commission_rate: number;
   can_create_bookings: boolean;
+  access_code: string | null;
 }
 
 type ServiceRow = {

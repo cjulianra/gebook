@@ -6,28 +6,33 @@ import type { Database } from "@/lib/types/database";
 
 type BusinessMemberRow = Database["public"]["Tables"]["business_members"]["Row"];
 
-interface InviteResult {
+interface CreateResult {
   data?: BusinessMemberRow;
-  /** Solo presente cuando se crea con contraseña temporal (sin correo) — para mostrarla una vez al dueño. */
-  tempPassword?: string;
   error?: string;
 }
 
-interface InviteEmployeeInput {
+interface CreateEmployeeInput {
   businessId: string;
-  email: string;
   fullName: string;
-  phone?: string;
+  phone: string;
   canCreateBookings?: boolean;
   serviceIds?: string[];
 }
 
-function generateTempPassword() {
-  // 10 caracteres, fácil de leer/dictar: sin 0/O/1/l ni símbolos.
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+function generateAccessCode() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function generateStrongPassword() {
+  // Nunca se usa a mano: solo asegura la cuenta de Supabase por detrás del código de 4 dígitos.
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
   let out = "";
-  for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 24; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return out;
+}
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
 }
 
 async function assertIsBusinessAdmin(businessId: string) {
@@ -49,77 +54,48 @@ async function assertIsBusinessAdmin(businessId: string) {
   }
 }
 
-export async function inviteEmployee(input: InviteEmployeeInput): Promise<InviteResult> {
+/**
+ * Crea un empleado sin correo: solo nombre y celular. El acceso a su panel se
+ * hace con ese celular + un código de 4 dígitos (ver getInviteDetails/login),
+ * que el dueño le comparte por WhatsApp con el botón "Invitar".
+ */
+export async function createEmployee(input: CreateEmployeeInput): Promise<CreateResult> {
   await assertIsBusinessAdmin(input.businessId);
 
-  const admin = createAdminClient();
-
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(input.email, {
-    data: { full_name: input.fullName },
-  });
-
-  if (inviteError || !invited.user) {
-    // Email ya existe: busca el profile existente para vincularlo como empleado.
-    const { data: existingProfile } = await admin.from("profiles").select("id").eq("email", input.email).maybeSingle();
-    if (!existingProfile) {
-      return { error: inviteError?.message ?? "No pudimos invitar a este correo." };
-    }
-    return linkEmployee(admin, input, existingProfile.id);
+  const phoneDigits = normalizePhone(input.phone);
+  if (phoneDigits.length < 10) {
+    return { error: "Ingresa un número de celular válido." };
   }
 
-  return linkEmployee(admin, input, invited.user.id);
-}
-
-/**
- * Alternativa a inviteEmployee que no depende del envío de correo: crea la
- * cuenta ya confirmada con una contraseña temporal que el dueño comparte
- * directamente (WhatsApp, en persona, etc.). Útil si el correo del negocio
- * aún no tiene SMTP configurado o el empleado no revisa su correo seguido.
- */
-export async function createEmployeeWithPassword(input: InviteEmployeeInput): Promise<InviteResult> {
-  await assertIsBusinessAdmin(input.businessId);
-
   const admin = createAdminClient();
-  const tempPassword = generateTempPassword();
+  const syntheticEmail = `emp-${phoneDigits}-${input.businessId.slice(0, 8)}@employees.gebook.internal`;
+  const accessCode = generateAccessCode();
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: input.email,
-    password: tempPassword,
+    email: syntheticEmail,
+    password: generateStrongPassword(),
     email_confirm: true,
     user_metadata: { full_name: input.fullName },
   });
 
   if (createError || !created.user) {
-    const { data: existingProfile } = await admin.from("profiles").select("id").eq("email", input.email).maybeSingle();
-    if (!existingProfile) {
-      return { error: createError?.message === "User already registered" ? "Ese correo ya tiene una cuenta." : "No pudimos crear la cuenta." };
-    }
-    return linkEmployee(admin, input, existingProfile.id);
+    return { error: "Ese celular ya tiene un empleado creado en este negocio." };
   }
 
-  const result = await linkEmployee(admin, input, created.user.id);
-  if (result.error) return result;
-  return { ...result, tempPassword };
-}
-
-async function linkEmployee(
-  admin: ReturnType<typeof createAdminClient>,
-  input: InviteEmployeeInput,
-  userId: string
-): Promise<InviteResult> {
   const { data: member, error: memberError } = await admin
     .from("business_members")
-    .insert({ business_id: input.businessId, user_id: userId, role: "employee", status: "active" })
+    .insert({ business_id: input.businessId, user_id: created.user.id, role: "employee", status: "active" })
     .select()
     .single();
 
   if (memberError || !member) {
-    return { error: "El usuario ya pertenece a este negocio o hubo un error al vincularlo." };
+    return { error: "No pudimos crear al empleado. Intenta de nuevo." };
   }
 
   await admin.from("employee_details").insert({
     business_member_id: member.id,
-    phone: input.phone || null,
+    phone: input.phone,
+    access_code: accessCode,
     can_create_bookings: input.canCreateBookings ?? true,
   });
 
@@ -128,6 +104,20 @@ async function linkEmployee(
   }
 
   return { data: member };
+}
+
+/** Teléfono + código vigente de un empleado, para armar el mensaje de WhatsApp del botón "Invitar". */
+export async function getInviteDetails(businessId: string, memberId: string) {
+  await assertIsBusinessAdmin(businessId);
+  const admin = createAdminClient();
+
+  const { data: member } = await admin.from("business_members").select("id, business_id").eq("id", memberId).eq("business_id", businessId).maybeSingle();
+  if (!member) return { error: "No encontramos a este empleado." };
+
+  const { data: details } = await admin.from("employee_details").select("phone, access_code").eq("business_member_id", memberId).maybeSingle();
+  if (!details?.phone || !details?.access_code) return { error: "A este empleado le falta el celular o el código." };
+
+  return { data: { phone: details.phone, accessCode: details.access_code } };
 }
 
 export async function removeEmployee(businessId: string, memberId: string) {

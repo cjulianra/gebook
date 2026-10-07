@@ -16,8 +16,9 @@ import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
 import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
+import { WhatsAppIcon } from "@/components/bookings/types";
 import { cn } from "@/lib/utils/cn";
-import { inviteEmployee, createEmployeeWithPassword, removeEmployee } from "./actions";
+import { createEmployee, getInviteDetails, removeEmployee } from "./actions";
 
 interface Member {
   id: string;
@@ -90,6 +91,20 @@ export function EmployeesClient({
     showToast("Empleado desactivado.");
   }
 
+  async function handleInvite(member: Member) {
+    const result = await getInviteDetails(businessId, member.id);
+    if (result.error || !result.data) {
+      showToast(result.error ?? "No pudimos preparar la invitación.", "danger");
+      return;
+    }
+    const profile = one(member.profiles)!;
+    const phoneDigits = result.data.phone.replace(/\D/g, "");
+    const waNumber = phoneDigits.length === 10 ? `57${phoneDigits}` : phoneDigits;
+    const loginUrl = `${window.location.origin}/acceso`;
+    const message = `Hola ${profile.full_name} \u{1F44B}, ya puedes entrar a tu panel de ${business.name} en Gebook.\n\nIngresa en: ${loginUrl}\nCon tu celular y este código de acceso: ${result.data.accessCode}`;
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
@@ -134,9 +149,18 @@ export function EmployeesClient({
                       {member.status === "inactive" && <Badge tone="neutral">Inactivo</Badge>}
                       {balance > 0 && <Badge tone="danger">Debe {currency.format(balance)}</Badge>}
                     </div>
-                    <Button size="sm" variant="secondary" className="shrink-0 justify-self-end" onClick={() => setConfigFor(member)}>
-                      Configuración
-                    </Button>
+                    <div className="flex shrink-0 items-center gap-1.5 justify-self-end">
+                      <button
+                        onClick={() => handleInvite(member)}
+                        aria-label="Invitar por WhatsApp"
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#25D366] hover:bg-[var(--color-canvas)]"
+                      >
+                        <WhatsAppIcon className="h-5 w-5" />
+                      </button>
+                      <Button size="sm" variant="secondary" onClick={() => setConfigFor(member)}>
+                        Configuración
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -159,13 +183,22 @@ export function EmployeesClient({
                         <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
                         <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
                       </div>
-                      <button
-                        onClick={() => setConfigFor(member)}
-                        aria-label="Configuración"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-canvas)] text-[var(--color-ink-700)] hover:bg-[var(--color-border)]"
-                      >
-                        <GearIcon className="h-4.5 w-4.5" />
-                      </button>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <button
+                          onClick={() => handleInvite(member)}
+                          aria-label="Invitar por WhatsApp"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas)] text-[#25D366] hover:bg-[var(--color-border)]"
+                        >
+                          <WhatsAppIcon className="h-4.5 w-4.5" />
+                        </button>
+                        <button
+                          onClick={() => setConfigFor(member)}
+                          aria-label="Configuración"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-canvas)] text-[var(--color-ink-700)] hover:bg-[var(--color-border)]"
+                        >
+                          <GearIcon className="h-4.5 w-4.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto">
                       {member.status === "inactive" && (
@@ -296,17 +329,12 @@ function InviteModal({
   services: Service[];
   onInvited: (member: Member, serviceIds: string[]) => void;
 }) {
-  const [method, setMethod] = useState<"email" | "password">("email");
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [canCreateBookings, setCanCreateBookings] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const showToast = useToast();
 
   function toggleService(id: string) {
     setSelectedServiceIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
@@ -314,21 +342,22 @@ function InviteModal({
 
   function resetForm() {
     setFullName("");
-    setEmail("");
     setPhone("");
     setSelectedServiceIds([]);
     setCanCreateBookings(true);
-    setCredentials(null);
-    setCopied(false);
-    setMethod("email");
+    setError(null);
+  }
+
+  function handleClose() {
+    resetForm();
+    onClose();
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const action = method === "email" ? inviteEmployee : createEmployeeWithPassword;
-    const result = await action({ businessId, email, fullName, phone, canCreateBookings, serviceIds: selectedServiceIds });
+    const result = await createEmployee({ businessId, fullName, phone, canCreateBookings, serviceIds: selectedServiceIds });
     setLoading(false);
 
     if (result.error || !result.data) {
@@ -341,67 +370,14 @@ function InviteModal({
         id: result.data.id,
         role: "employee",
         status: "active",
-        profiles: { id: result.data.user_id, full_name: fullName, email, avatar_url: null },
-        employee_details: { phone: phone || null, specialty: null, photo_url: null, commission_rate: 40, can_create_bookings: canCreateBookings },
+        profiles: { id: result.data.user_id, full_name: fullName, email: "", avatar_url: null },
+        employee_details: { phone, specialty: null, photo_url: null, commission_rate: 40, can_create_bookings: canCreateBookings },
       },
       selectedServiceIds
     );
 
-    if (result.tempPassword) {
-      // No cerramos todavía: hay que mostrarle la contraseña al dueño una sola vez.
-      setCredentials({ email, password: result.tempPassword });
-      return;
-    }
-
-    showToast("Invitación enviada.");
     resetForm();
     onClose();
-  }
-
-  async function handleCopy() {
-    if (!credentials) return;
-    try {
-      await navigator.clipboard.writeText(`Correo: ${credentials.email}\nContraseña: ${credentials.password}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      showToast("No pudimos copiar. Selecciona el texto manualmente.", "danger");
-    }
-  }
-
-  function handleClose() {
-    resetForm();
-    onClose();
-  }
-
-  if (credentials) {
-    return (
-      <Modal
-        open={open}
-        onClose={handleClose}
-        title="Empleado creado"
-        footer={<Button onClick={handleClose}>Listo</Button>}
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-ink-700)]">
-            Comparte estos datos de acceso con tu empleado (por WhatsApp, en persona, etc.). Podrá cambiar la contraseña después desde
-            su perfil.
-          </p>
-          <div className="space-y-2 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-canvas)] p-4 text-sm">
-            <p>
-              <span className="text-[var(--color-ink-500)]">Correo:</span> <span className="font-medium">{credentials.email}</span>
-            </p>
-            <p>
-              <span className="text-[var(--color-ink-500)]">Contraseña:</span>{" "}
-              <span className="font-mono font-medium">{credentials.password}</span>
-            </p>
-          </div>
-          <Button variant="secondary" className="w-full" onClick={handleCopy}>
-            {copied ? "¡Copiado!" : "Copiar datos"}
-          </Button>
-        </div>
-      </Modal>
-    );
   }
 
   return (
@@ -415,54 +391,19 @@ function InviteModal({
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Creando…" : method === "email" ? "Enviar invitación" : "Crear empleado"}
+            {loading ? "Creando…" : "Crear empleado"}
           </Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label>¿Cómo quieres darle acceso?</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setMethod("email")}
-              className={cn(
-                "rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-colors",
-                method === "email"
-                  ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
-                  : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
-              )}
-            >
-              <span className="block font-medium text-[var(--color-ink-900)]">Por correo</span>
-              <span className="block text-xs text-[var(--color-ink-500)]">Le llega un enlace para crear su contraseña.</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMethod("password")}
-              className={cn(
-                "rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-colors",
-                method === "password"
-                  ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]"
-                  : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
-              )}
-            >
-              <span className="block font-medium text-[var(--color-ink-900)]">Con contraseña</span>
-              <span className="block text-xs text-[var(--color-ink-500)]">Tú le compartes el acceso. No depende del correo.</span>
-            </button>
-          </div>
-        </div>
-        <div>
           <Label htmlFor="fullName">Nombre completo</Label>
           <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Laura Gómez" />
         </div>
         <div>
-          <Label htmlFor="email">Correo electrónico</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="laura@correo.com" />
-        </div>
-        <div>
-          <Label htmlFor="phone">Teléfono (opcional)</Label>
-          <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 123 4567" />
+          <Label htmlFor="phone">Celular</Label>
+          <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 123 4567" />
         </div>
         <div>
           <Label>Servicios que puede realizar</Label>
@@ -503,9 +444,7 @@ function InviteModal({
         </label>
         <FieldError>{error ?? undefined}</FieldError>
         <p className="text-xs text-[var(--color-ink-500)]">
-          {method === "email"
-            ? "Enviaremos un correo de invitación para que cree su contraseña y acceda a su agenda."
-            : "Se crea la cuenta al instante con una contraseña temporal que verás en el siguiente paso."}
+          Se crea la cuenta al instante. Después usa el botón de WhatsApp junto a su nombre para enviarle su código de acceso.
         </p>
       </form>
     </Modal>

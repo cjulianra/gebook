@@ -29,7 +29,6 @@ export function MiPerfilClient(props: {
   businessId: string;
   memberId: string;
   fullName: string;
-  email: string;
   specialty: string | null;
   photoUrl: string | null;
   commissionRate: number;
@@ -50,7 +49,6 @@ function Inner({
   businessId,
   memberId,
   fullName,
-  email,
   specialty,
   photoUrl,
   commissionRate,
@@ -63,7 +61,6 @@ function Inner({
   businessId: string;
   memberId: string;
   fullName: string;
-  email: string;
   specialty: string | null;
   photoUrl: string | null;
   commissionRate: number;
@@ -144,7 +141,7 @@ function Inner({
             <Avatar name={fullName} src={photo} size={72} />
             <div className="min-w-0 flex-1">
               <p className="text-lg font-semibold text-[var(--color-ink-900)]">{fullName}</p>
-              <p className="truncate text-sm text-[var(--color-ink-500)]">{specialty ?? email}</p>
+              {specialty && <p className="truncate text-sm text-[var(--color-ink-500)]">{specialty}</p>}
               <div className="mt-1.5 flex items-center gap-2">
                 <Badge tone="accent">{commissionRate}% comisión</Badge>
               </div>
