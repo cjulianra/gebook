@@ -40,6 +40,14 @@ interface Assignment {
   service_id: string;
 }
 
+function GearIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8-3-1.7-.5a6.9 6.9 0 0 0-.6-1.5l1-1.6-1.4-1.4-1.6 1a7 7 0 0 0-1.5-.6L14 4h-2l-.5 1.7a7 7 0 0 0-1.5.6l-1.6-1L7 6.7l1 1.6a6.9 6.9 0 0 0-.6 1.5L4.8 10v2l1.7.5c.1.5.3 1 .6 1.5l-1 1.6 1.4 1.4 1.6-1c.5.3 1 .5 1.5.6L11 19h2l.5-1.7c.5-.1 1-.3 1.5-.6l1.6 1 1.4-1.4-1-1.6c.3-.5.5-1 .6-1.5l1.7-.5v-2Z" />
+    </svg>
+  );
+}
+
 function one<T>(v: T | T[] | null | undefined): T | undefined {
   return Array.isArray(v) ? v[0] : v ?? undefined;
 }
@@ -145,25 +153,33 @@ export function EmployeesClient({
                 const balance = earned - paid;
 
                 return (
-                  <div key={member.id} className="space-y-3 px-4 py-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
-                      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <div key={member.id} className="space-y-2.5 px-4 py-4">
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
                         <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
-                        {member.status === "inactive" && <Badge tone="neutral">Inactivo</Badge>}
                       </div>
+                      <button
+                        onClick={() => setConfigFor(member)}
+                        aria-label="Configuración"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-canvas)] text-[var(--color-ink-700)] hover:bg-[var(--color-border)]"
+                      >
+                        <GearIcon className="h-4.5 w-4.5" />
+                      </button>
                     </div>
-                    <div className="grid grid-cols-[88px_1fr] gap-y-1.5 text-sm">
-                      <span className="text-[var(--color-ink-500)]">Comisión</span>
-                      <span className="text-[var(--color-ink-900)]">{details?.commission_rate ?? 40}%</span>
-                      <span className="text-[var(--color-ink-500)]">Saldo</span>
-                      <span className={balance > 0 ? "font-medium text-[var(--color-danger)]" : "text-[var(--color-ink-900)]"}>
+                    <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto">
+                      {member.status === "inactive" && (
+                        <Badge tone="neutral" className="shrink-0">
+                          Inactivo
+                        </Badge>
+                      )}
+                      <Badge tone="accent" className="shrink-0">
+                        Comisión {details?.commission_rate ?? 40}%
+                      </Badge>
+                      <Badge tone={balance > 0 ? "danger" : "success"} className="shrink-0">
                         {balance > 0 ? `Debe ${currency.format(balance)}` : "Al día"}
-                      </span>
+                      </Badge>
                     </div>
-                    <Button size="sm" variant="secondary" className="w-full" onClick={() => setConfigFor(member)}>
-                      Configuración
-                    </Button>
                   </div>
                 );
               })}
