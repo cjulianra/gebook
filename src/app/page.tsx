@@ -64,9 +64,11 @@ function FeatureIcon({ children }: { children: React.ReactNode }) {
 function PhoneFrame({ src, alt, className }: { src: string; alt: string; className?: string }) {
   return (
     <div className={cn("relative mx-auto w-[220px] shrink-0 sm:w-[240px]", className)}>
-      <div className="relative overflow-hidden rounded-[2.2rem] border-[6px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)]">
+      {/* Sin aspect-ratio fijo ni object-cover: cada captura conserva su alto natural
+          según su propio contenido, así nunca se recorta texto a los lados. */}
+      <div className="overflow-hidden rounded-[2.2rem] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15">
         {/* eslint-disable-next-line @next/next/no-img-element -- mockups are static files in /public, not remote/optimizable content */}
-        <img src={src} alt={alt} className="block aspect-[9/17.5] w-full object-cover object-top" />
+        <img src={src} alt={alt} className="block h-auto w-full" />
       </div>
     </div>
   );
@@ -74,14 +76,14 @@ function PhoneFrame({ src, alt, className }: { src: string; alt: string; classNa
 
 function DesktopFrame({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="mx-auto max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border-[6px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)]">
+    <div className="mx-auto max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15">
       <div className="flex items-center gap-1.5 px-3 py-2">
         <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element -- mockups are static files in /public, not remote/optimizable content */}
-      <img src={src} alt={alt} className="block aspect-[1440/838] w-full object-cover object-top" />
+      <img src={src} alt={alt} className="block h-auto w-full" />
     </div>
   );
 }
