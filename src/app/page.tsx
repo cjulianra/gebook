@@ -10,7 +10,8 @@ const FEATURES = [
       <path d="M7 3v2M17 3v2M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
     ),
     title: "Agenda del día a día",
-    description: "Reservas organizadas por empleado, con estados que avanzan solos cuando llega y termina la hora de cada cita.",
+    description:
+      "Crea reservas tú mismo para tus clientes, o deja que ellos agenden solos — las dos entran a la misma agenda, organizada por empleado.",
   },
   {
     icon: <path d="M12 2 9.5 7l-5.5.8 4 3.9-1 5.3L12 14.5l4.9 2.5-.9-5.3 4-3.9L14.5 7 12 2Z" />,
@@ -64,10 +65,23 @@ function PhoneFrame({ src, alt, className }: { src: string; alt: string; classNa
   return (
     <div className={cn("relative mx-auto w-[220px] shrink-0 sm:w-[240px]", className)}>
       <div className="relative overflow-hidden rounded-[2.2rem] border-[6px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)]">
-        <div className="absolute left-1/2 top-0 z-10 h-5 w-24 -translate-x-1/2 rounded-b-xl bg-[var(--color-ink-900)]" />
         {/* eslint-disable-next-line @next/next/no-img-element -- mockups are static files in /public, not remote/optimizable content */}
         <img src={src} alt={alt} className="block aspect-[9/17.5] w-full object-cover object-top" />
       </div>
+    </div>
+  );
+}
+
+function DesktopFrame({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="mx-auto max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border-[6px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)]">
+      <div className="flex items-center gap-1.5 px-3 py-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- mockups are static files in /public, not remote/optimizable content */}
+      <img src={src} alt={alt} className="block aspect-[1440/838] w-full object-cover object-top" />
     </div>
   );
 }
@@ -160,25 +174,41 @@ export default function LandingPage() {
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
             Así se ve por dentro
           </h2>
-          <p className="mt-3 text-[var(--color-ink-700)]">La misma app, pensada para quien administra, para quien atiende y para quien reserva.</p>
+          <p className="mt-3 text-[var(--color-ink-700)]">
+            Tu negocio puede crear reservas directo desde la Agenda, y al mismo tiempo tus clientes reservan solos desde su propio link —
+            las dos vías alimentan la misma agenda.
+          </p>
         </div>
         <div className="grid gap-10 sm:grid-cols-3">
           <div className="text-center">
             <PhoneFrame src="/landing/mock-agenda.png" alt="Agenda del negocio" />
-            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Para el negocio</h3>
-            <p className="mt-1 text-sm text-[var(--color-ink-500)]">Agenda del día, con WhatsApp directo a cada cliente.</p>
+            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Agenda del negocio</h3>
+            <p className="mt-1 text-sm text-[var(--color-ink-500)]">Crea reservas tú mismo y envía el resumen por WhatsApp a cada cliente.</p>
           </div>
           <div className="text-center">
             <PhoneFrame src="/landing/mock-public.png" alt="Página pública de reservas" />
-            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Para el cliente</h3>
-            <p className="mt-1 text-sm text-[var(--color-ink-500)]">Reserva sola, 24/7, sin necesidad de crear una cuenta.</p>
+            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reserva pública</h3>
+            <p className="mt-1 text-sm text-[var(--color-ink-500)]">Tus clientes también pueden reservar solos, 24/7, sin crear una cuenta.</p>
           </div>
           <div className="text-center">
-            <PhoneFrame src="/landing/mock-reportes.png" alt="Reportes del empleado" />
-            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Para el empleado</h3>
-            <p className="mt-1 text-sm text-[var(--color-ink-500)]">Sus servicios y su comisión, claros, por día, semana o mes.</p>
+            <PhoneFrame src="/landing/mock-reportes.png" alt="Reportes del negocio" />
+            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reportes del negocio</h3>
+            <p className="mt-1 text-sm text-[var(--color-ink-500)]">Ingresos, comisiones y rendimiento por empleado, de un vistazo.</p>
           </div>
         </div>
+      </section>
+
+      {/* Desktop showcase */}
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
+        <div className="mx-auto mb-10 max-w-xl text-center">
+          <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
+            Y desde el computador, igual de completo
+          </h2>
+          <p className="mt-3 text-[var(--color-ink-700)]">
+            Administra la agenda de todo tu equipo, crea reservas para tus clientes y lleva el control del negocio desde cualquier pantalla.
+          </p>
+        </div>
+        <DesktopFrame src="/landing/mock-desktop-agenda.png" alt="Agenda del negocio en computador" />
       </section>
 
       {/* How it works */}
