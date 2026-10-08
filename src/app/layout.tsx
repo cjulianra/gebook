@@ -12,9 +12,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const title = "Gebook — Gestión para negocios de belleza";
+const description = "Agenda, empleados, comisiones, reportes y reservas públicas para salones, barberías y spas — todo en un solo lugar.";
+
 export const metadata: Metadata = {
-  title: "Gebook — Gestión para negocios de belleza",
-  description: "Plataforma para administrar servicios, empleados, reservas y clientes.",
+  metadataBase: new URL("https://gebook.site"),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    url: "https://gebook.site",
+    siteName: "Gebook",
+    images: [{ url: "/og-image.png", width: 780, height: 780 }],
+    locale: "es_CO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title,
+    description,
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

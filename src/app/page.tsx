@@ -108,7 +108,8 @@ export default function LandingPage() {
     <div className={cn("gradient-canvas min-h-screen", fraunces.variable)}>
       {/* Nav */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <span className="text-lg font-semibold tracking-tight text-[var(--color-ink-900)]">Gebook</span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset in /public */}
+        <img src="/landing/logo-gebook.png" alt="Gebook" className="h-7 w-auto" />
         <nav className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/login"
