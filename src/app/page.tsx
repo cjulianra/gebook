@@ -61,13 +61,28 @@ function FeatureIcon({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PhoneFrame({ src, alt, className }: { src: string; alt: string; className?: string }) {
+function PhoneFrame({
+  src,
+  alt,
+  className,
+  matchHeight,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  /** Recorta por abajo a una altura fija compartida, para que varios celulares en fila
+      se vean del mismo tamaño sin forzar un aspect-ratio que corte texto a los lados. */
+  matchHeight?: boolean;
+}) {
   return (
     <div className={cn("relative mx-auto w-[220px] shrink-0 sm:w-[240px]", className)}>
-      {/* Sin aspect-ratio fijo ni object-cover: cada captura conserva su alto natural
-          según su propio contenido, así nunca se recorta texto a los lados. */}
-      <div className="overflow-hidden rounded-[2.2rem] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15">
-        {/* eslint-disable-next-line @next/next/no-img-element -- mockups are static files in /public, not remote/optimizable content */}
+      <div
+        className={cn(
+          "overflow-hidden rounded-[2.2rem] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15",
+          matchHeight && "h-[355px] sm:h-[388px]"
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- mockups son archivos estáticos en /public */}
         <img src={src} alt={alt} className="block h-auto w-full" />
       </div>
     </div>
@@ -183,17 +198,17 @@ export default function LandingPage() {
         </div>
         <div className="grid gap-10 sm:grid-cols-3">
           <div className="text-center">
-            <PhoneFrame src="/landing/mock-agenda.png" alt="Agenda del negocio" />
+            <PhoneFrame src="/landing/mock-agenda.png" alt="Agenda del negocio" matchHeight />
             <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Agenda del negocio</h3>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Crea reservas tú mismo y envía el resumen por WhatsApp a cada cliente.</p>
           </div>
           <div className="text-center">
-            <PhoneFrame src="/landing/mock-public.png" alt="Página pública de reservas" />
+            <PhoneFrame src="/landing/mock-public.png" alt="Página pública de reservas" matchHeight />
             <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reserva pública</h3>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Tus clientes también pueden reservar solos, 24/7, sin crear una cuenta.</p>
           </div>
           <div className="text-center">
-            <PhoneFrame src="/landing/mock-reportes.png" alt="Reportes del negocio" />
+            <PhoneFrame src="/landing/mock-reportes.png" alt="Reportes del negocio" matchHeight />
             <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reportes del negocio</h3>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Ingresos, comisiones y rendimiento por empleado, de un vistazo.</p>
           </div>
