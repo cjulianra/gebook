@@ -156,7 +156,7 @@ export default function LandingPage() {
               Ver cómo funciona ↓
             </a>
           </div>
-          <p className="mt-5 text-xs text-[var(--color-ink-500)]">Sin tarjeta de crédito. Tu página de reservas queda lista en minutos.</p>
+          <p className="mt-5 text-xs text-[var(--color-ink-500)]">Tu página de reservas queda lista en minutos.</p>
         </div>
 
         <div className="flex items-center justify-center gap-4">
@@ -179,7 +179,7 @@ export default function LandingPage() {
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-accent-ink)] [background:var(--gradient-accent)]">
                 <FeatureIcon>{f.icon}</FeatureIcon>
               </div>
-              <h3 className="font-semibold text-[var(--color-ink-900)]">{f.title}</h3>
+              <h2 className="font-semibold text-[var(--color-ink-900)]">{f.title}</h2>
               <p className="mt-1.5 text-sm text-[var(--color-ink-500)]">{f.description}</p>
             </div>
           ))}
@@ -200,17 +200,17 @@ export default function LandingPage() {
         <div className="grid gap-10 sm:grid-cols-3">
           <div className="text-center">
             <PhoneFrame src="/landing/mock-agenda.png" alt="Agenda del negocio" matchHeight />
-            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Agenda del negocio</h3>
+            <h2 className="mt-5 font-semibold text-[var(--color-ink-900)]">Agenda del negocio</h2>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Crea reservas tú mismo y envía el resumen por WhatsApp a cada cliente.</p>
           </div>
           <div className="text-center">
             <PhoneFrame src="/landing/mock-public.png" alt="Página pública de reservas" matchHeight />
-            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reserva pública</h3>
+            <h2 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reserva pública</h2>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Tus clientes también pueden reservar solos, 24/7, sin crear una cuenta.</p>
           </div>
           <div className="text-center">
             <PhoneFrame src="/landing/mock-reportes.png" alt="Reportes del negocio" matchHeight />
-            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reportes del negocio</h3>
+            <h2 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reportes del negocio</h2>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Ingresos, comisiones y rendimiento por empleado, de un vistazo.</p>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
         <div className="mx-auto mb-10 max-w-xl text-center">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
-            Y desde el computador, igual de completo
+            Software de gestión para tu negocio de belleza, también desde el computador
           </h2>
           <p className="mt-3 text-[var(--color-ink-700)]">
             Administra la agenda de todo tu equipo, crea reservas para tus clientes y lleva el control del negocio desde cualquier pantalla.
@@ -242,7 +242,7 @@ export default function LandingPage() {
               <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-ink-900)] text-sm font-semibold text-white">
                 {s.n}
               </div>
-              <h3 className="font-semibold text-[var(--color-ink-900)]">{s.title}</h3>
+              <h2 className="font-semibold text-[var(--color-ink-900)]">{s.title}</h2>
               <p className="mt-1.5 text-sm text-[var(--color-ink-500)]">{s.description}</p>
             </div>
           ))}
