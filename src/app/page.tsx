@@ -78,7 +78,7 @@ function PhoneFrame({
     <div className={cn("relative mx-auto w-[220px] shrink-0 sm:w-[240px]", className)}>
       <div
         className={cn(
-          "overflow-hidden rounded-[2.2rem] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15",
+          "overflow-hidden rounded-[1.3rem] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15",
           matchHeight && "h-[355px] sm:h-[388px]"
         )}
       >
@@ -91,7 +91,7 @@ function PhoneFrame({
 
 function DesktopFrame({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="mx-auto max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15">
+    <div className="mx-auto max-w-4xl overflow-hidden rounded-[var(--radius-md)] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15">
       <div className="flex items-center gap-1.5 px-3 py-2">
         <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
