@@ -30,7 +30,8 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPortalAuthRoute = path.startsWith("/portal/login") || path.startsWith("/portal/register");
+  const isPortalAuthRoute =
+    path.startsWith("/portal/login") || path.startsWith("/portal/register") || path.startsWith("/portal/forgot-password");
   const isBusinessAuthRoute = path.startsWith("/login") || path.startsWith("/register");
   const isProtectedRoute =
     path.startsWith("/app") || path.startsWith("/admin") || (path.startsWith("/portal") && !isPortalAuthRoute);

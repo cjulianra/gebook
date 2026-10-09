@@ -48,7 +48,12 @@ function LoginForm() {
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@negocio.com" />
           </div>
           <div>
-            <Label htmlFor="password">Contraseña</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Contraseña</Label>
+              <Link href="/forgot-password" className="mb-1.5 text-xs font-medium text-[var(--color-accent)] hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <PasswordInput id="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <FieldError>{error ?? undefined}</FieldError>
