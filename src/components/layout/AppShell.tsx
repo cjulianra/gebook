@@ -27,6 +27,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const primaryItems = items.filter((item) => PRIMARY_MOBILE_HREFS.includes(item.href));
   const moreItems = items.filter((item) => !PRIMARY_MOBILE_HREFS.includes(item.href));
   const base = `/app/${business.slug}`;
+  // Un admin puede revocarle permisos a un empleado (ver Clientes, crear reservas) en
+  // cualquier momento — si el navegador del empleado ya tenía esa página precargada
+  // (prefetch), seguiría sirviendo la versión vieja con acceso en vez de volver a
+  // verificar en el servidor. Para empleados, cada navegación siempre se revalida.
+  const noPrefetch = !!onboardingStep || membership.role === "employee";
 
   async function handleLogout() {
     const supabase = createClient();
@@ -51,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={href}
-                prefetch={onboardingStep ? false : undefined}
+                prefetch={noPrefetch ? false : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-[var(--radius-pill)] px-4 py-2.5 text-sm font-medium transition-all",
                   active
@@ -115,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={href}
-              prefetch={onboardingStep ? false : undefined}
+              prefetch={noPrefetch ? false : undefined}
               className={cn(
                 "flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius-pill)] py-2 text-[10px] font-medium transition-colors",
                 active ? "bg-[var(--color-ink-900)] text-white" : "text-[var(--color-ink-500)]"
@@ -135,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         base={base}
         pathname={pathname}
         onLogout={handleLogout}
-        noPrefetch={!!onboardingStep}
+        noPrefetch={noPrefetch}
       />
     </div>
   );

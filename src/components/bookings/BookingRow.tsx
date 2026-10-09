@@ -25,7 +25,8 @@ export function BookingRow({
   onEdit: (booking: Booking) => void;
   onCancel: (booking: Booking) => void;
 }) {
-  const { business } = useBusiness();
+  const { business, membership } = useBusiness();
+  const canContactClient = membership.role !== "employee" || membership.canViewClients;
   const client = one(booking.clients);
   const service = one(booking.services);
   const employee = one(booking.business_members);
@@ -48,7 +49,7 @@ export function BookingRow({
   const SCISSORS = "\u{1F487}";
   const PERSON = "\u{1F464}";
 
-  const whatsappHref = client?.phone
+  const whatsappHref = client?.phone && canContactClient
     ? `https://wa.me/${toWhatsAppNumber(client.phone)}?text=${encodeURIComponent(
         `Hola ${client.first_name} ${WAVE}, te confirmamos tu reserva en ${business.name}:\n\n${CALENDAR} ${dateLabel}\n${CLOCK} ${startTime} - ${endTime}\n${SCISSORS} ${service?.name ?? ""}\n${PERSON} Con ${one(employee?.profiles)?.full_name ?? ""}\n\n¡Te esperamos!`
       )}`
