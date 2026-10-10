@@ -626,33 +626,23 @@ function NewBookingModal({
         {/* Registro rápido: permite registrar una reserva en un horario ya
             pasado o fuera del horario de atención, para casos en que el
             servicio ya ocurrió pero no se alcanzó a registrar a tiempo. */}
-        <div className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] px-4 py-3">
-          <div>
-            <p className="text-sm font-medium text-[var(--color-ink-900)]">Registro rápido</p>
-            <p className="text-xs text-[var(--color-ink-500)]">
-              Permite elegir cualquier hora, aunque ya haya pasado o esté fuera del horario de atención. Útil cuando el servicio ya se hizo y no se registró a tiempo.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setQuickMode((v) => !v);
+        <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] px-4 py-3">
+          <input
+            type="checkbox"
+            checked={quickMode}
+            onChange={(e) => {
+              setQuickMode(e.target.checked);
               setTime("");
             }}
-            aria-pressed={quickMode}
-            className={cn(
-              "relative h-6 w-11 shrink-0 rounded-[var(--radius-pill)] transition-colors",
-              quickMode ? "bg-[var(--color-ink-900)]" : "bg-[var(--color-border-strong)]"
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform",
-                quickMode ? "translate-x-[22px]" : "translate-x-0.5"
-              )}
-            />
-          </button>
-        </div>
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+          />
+          <span>
+            <span className="block text-sm font-medium text-[var(--color-ink-900)]">Registro rápido: el servicio ya se hizo</span>
+            <span className="block text-xs text-[var(--color-ink-500)]">
+              Márcalo para elegir cualquier hora, aunque ya haya pasado o esté fuera del horario de atención. Úsalo cuando el servicio ya ocurrió y no se registró a tiempo.
+            </span>
+          </span>
+        </label>
 
         {/* Hora */}
         <div>
