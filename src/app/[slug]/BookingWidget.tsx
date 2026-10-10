@@ -666,9 +666,9 @@ function StepConfirmar({
 
 function Row({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
   return (
-    <button onClick={onEdit} className="flex w-full items-center justify-between text-left text-sm">
-      <span className="text-[var(--color-ink-500)]">{label}</span>
-      <span className="font-medium capitalize text-[var(--color-ink-900)] hover:underline">{value}</span>
+    <button onClick={onEdit} className="block w-full text-left text-sm">
+      <span className="block text-[var(--color-ink-500)]">{label}</span>
+      <span className="mt-0.5 block font-medium capitalize text-[var(--color-ink-900)] hover:underline">{value}</span>
     </button>
   );
 }
