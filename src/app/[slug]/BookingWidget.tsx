@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/States";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
 import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
+import { addMinutes } from "@/components/bookings/types";
 import { getAvailableSlots, confirmBooking } from "./actions";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -84,20 +85,21 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const initialService = searchParams.get("service") ?? "";
+  const initialServices = (searchParams.get("services") ?? searchParams.get("service") ?? "").split(",").filter(Boolean);
   const initialEmployee = searchParams.get("employee") ?? "";
   const initialDay = searchParams.get("day") ?? todayKey();
   const initialTime = searchParams.get("time") ?? "";
 
-  const [serviceId, setServiceId] = useState(initialService);
+  const [serviceIds, setServiceIds] = useState<string[]>(initialServices);
   const [employeeId, setEmployeeId] = useState(initialEmployee);
   const [day, setDay] = useState(initialDay);
   const [time, setTime] = useState(initialTime);
-  const [step, setStep] = useState<Step>(initialEmployee ? 4 : initialTime ? 3 : initialService ? 2 : 1);
+  const [step, setStep] = useState<Step>(initialEmployee ? 4 : initialTime ? 3 : initialServices.length > 0 ? 2 : 1);
   const [employeeSlots, setEmployeeSlots] = useState<Record<string, string[]>>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [confirmedSummary, setConfirmedSummary] = useState<{ services: Service[]; employee: Employee; day: string; time: string } | null>(null);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [guestError, setGuestError] = useState<string | null>(null);
@@ -110,22 +112,28 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
     });
   }, []);
 
-  const service = services.find((s) => s.id === serviceId);
+  // El orden del catálogo decide el orden en que se encadenan los servicios.
+  const selectedServices = services.filter((s) => serviceIds.includes(s.id));
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
 
+  // Un solo profesional atiende todos los servicios elegidos, uno tras otro —
+  // por eso debe estar asignado a TODOS, no solo a alguno.
   const eligibleEmployees = useMemo(() => {
-    if (!serviceId) return [];
-    const ids = assignments.filter((a) => a.service_id === serviceId).map((a) => a.business_member_id);
-    return employees.filter((e) => ids.includes(e.business_member_id));
-  }, [serviceId, employees, assignments]);
+    if (selectedServices.length === 0) return [];
+    return employees.filter((e) =>
+      selectedServices.every((s) => assignments.some((a) => a.service_id === s.id && a.business_member_id === e.business_member_id))
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedServices is derived fresh each render from serviceIds + services
+  }, [serviceIds, employees, assignments]);
 
   const employee = eligibleEmployees.find((e) => e.business_member_id === employeeId);
 
   // Igual que en la reserva del negocio: primero se busca la disponibilidad
-  // de TODOS los profesionales elegibles para el servicio y día elegidos, así
-  // las horas que se muestran siempre tienen a alguien disponible, y luego se
-  // puede ver quién específicamente está libre a esa hora.
+  // de TODOS los profesionales elegibles para la duración total de los
+  // servicios y día elegidos, así las horas que se muestran siempre tienen a
+  // alguien disponible, y luego se puede ver quién específicamente está libre.
   useEffect(() => {
-    if (!service || eligibleEmployees.length === 0) {
+    if (selectedServices.length === 0 || eligibleEmployees.length === 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale slots when inputs are incomplete
       setEmployeeSlots({});
       return;
@@ -134,7 +142,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
     setLoadingSlots(true);
     Promise.all(
       eligibleEmployees.map(async (e) => {
-        const empSlots = await getAvailableSlots(e.business_member_id, day, service.duration_minutes);
+        const empSlots = await getAvailableSlots(e.business_member_id, day, totalDuration);
         return [e.business_member_id, empSlots] as const;
       })
     ).then((results) => {
@@ -145,7 +153,8 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
     return () => {
       cancelled = true;
     };
-  }, [service, day, eligibleEmployees]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- totalDuration derived from selectedServices, already tracked via serviceIds
+  }, [serviceIds, day, eligibleEmployees]);
 
   const candidateTimes = useMemo(() => {
     const all = new Set<string>();
@@ -159,22 +168,22 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
     return (employeeSlots[id] ?? []).includes(time);
   }
 
-  function selectService(id: string) {
-    setServiceId(id);
-    setEmployeeId("");
+  function toggleService(id: string) {
+    setServiceIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     setTime("");
-    setStep(2);
-  }
-
-  function selectTime(t: string) {
-    setTime(t);
     setEmployeeId("");
-    setStep(3);
   }
 
-  function selectEmployee(id: string) {
-    setEmployeeId(id);
-    setStep(4);
+  function canAdvance() {
+    if (step === 1) return selectedServices.length > 0;
+    if (step === 2) return !!time;
+    if (step === 3) return !!employeeId && isEmployeeAvailable(employeeId);
+    return true;
+  }
+
+  function goNext() {
+    if (!canAdvance()) return;
+    setStep((s) => (s < 4 ? ((s + 1) as Step) : s));
   }
 
   function goBack() {
@@ -182,12 +191,12 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
   }
 
   function goToLogin() {
-    const params = new URLSearchParams({ service: serviceId, employee: employeeId, day, time });
+    const params = new URLSearchParams({ services: serviceIds.join(","), employee: employeeId, day, time });
     router.push(`/portal/login?redirect=${encodeURIComponent(`/${business.slug}?${params.toString()}`)}`);
   }
 
   async function handleConfirm() {
-    if (!service || !employeeId || !time) return;
+    if (selectedServices.length === 0 || !employeeId || !time) return;
 
     if (!userEmail) {
       setGuestError(null);
@@ -196,26 +205,32 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
     }
 
     setConfirming(true);
-    const result = await confirmBooking({
-      businessId: business.id,
-      serviceId: service.id,
-      businessMemberId: employeeId,
-      day,
-      time,
-      durationMinutes: service.duration_minutes,
-      guestName: guestName.trim() || undefined,
-      guestPhone: guestPhone.trim() || undefined,
-    });
-    setConfirming(false);
-
-    if (result.error) {
-      showToast(result.error, "danger");
-      return;
+    let cursor = time;
+    for (const svc of selectedServices) {
+      const result = await confirmBooking({
+        businessId: business.id,
+        serviceId: svc.id,
+        businessMemberId: employeeId,
+        day,
+        time: cursor,
+        durationMinutes: svc.duration_minutes,
+        guestName: guestName.trim() || undefined,
+        guestPhone: guestPhone.trim() || undefined,
+      });
+      if (result.error) {
+        setConfirming(false);
+        showToast(result.error, "danger");
+        return;
+      }
+      cursor = addMinutes(cursor, svc.duration_minutes);
     }
+    setConfirming(false);
+    setConfirmedSummary({ services: selectedServices, employee: employee!, day, time });
     setConfirmed(true);
   }
 
-  if (confirmed && service && employee) {
+  if (confirmed && confirmedSummary) {
+    const { services: bookedServices, employee: bookedEmployee, day: bookedDay, time: bookedTime } = confirmedSummary;
     return (
       <div className="gradient-canvas flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
@@ -224,9 +239,9 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
             <div>
               <h1 className="text-lg font-semibold text-[var(--color-ink-900)]">Reserva confirmada</h1>
               <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-                {service.name} con {employee.full_name}
+                {bookedServices.map((s) => s.name).join(", ")} con {bookedEmployee.full_name}
                 <br />
-                {bogotaDateTime(day, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · {formatTime12h(time)}
+                {bogotaDateTime(bookedDay, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · {formatTime12h(bookedTime)}
               </p>
             </div>
             {userEmail ? (
@@ -271,10 +286,10 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-4 md:px-8">
         {step === 1 && (
-          <StepServicio services={services} selectedId={serviceId} onSelect={selectService} showPrices={business.show_prices} />
+          <StepServicios services={services} selectedIds={serviceIds} onToggle={toggleService} showPrices={business.show_prices} />
         )}
 
-        {step === 2 && service && (
+        {step === 2 && selectedServices.length > 0 && (
           <StepFechaHora
             day={day}
             time={time}
@@ -292,17 +307,20 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
               setTime("");
               setEmployeeId("");
             }}
-            onSelectTime={selectTime}
+            onSelectTime={(t) => {
+              setTime(t);
+              setEmployeeId("");
+            }}
           />
         )}
 
-        {step === 3 && service && time && (
-          <StepProfesional employees={eligibleEmployees} selectedId={employeeId} isAvailable={isEmployeeAvailable} onSelect={selectEmployee} />
+        {step === 3 && selectedServices.length > 0 && time && (
+          <StepProfesional employees={eligibleEmployees} selectedId={employeeId} isAvailable={isEmployeeAvailable} onSelect={setEmployeeId} />
         )}
 
-        {step === 4 && service && employee && time && (
+        {step === 4 && selectedServices.length > 0 && employee && time && (
           <StepConfirmar
-            service={service}
+            services={selectedServices}
             employee={employee}
             day={day}
             time={time}
@@ -319,6 +337,21 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
             onConfirm={handleConfirm}
             onGoToLogin={goToLogin}
           />
+        )}
+
+        {step < 4 && (
+          <div className="mt-6 flex items-center justify-between gap-3">
+            {step > 1 ? (
+              <Button type="button" variant="secondary" onClick={goBack}>
+                Atrás
+              </Button>
+            ) : (
+              <span />
+            )}
+            <Button type="button" onClick={goNext} disabled={!canAdvance()}>
+              Siguiente
+            </Button>
+          </div>
         )}
       </main>
     </div>
@@ -363,15 +396,15 @@ function Stepper({ step }: { step: Step }) {
   );
 }
 
-function StepServicio({
+function StepServicios({
   services,
-  selectedId,
-  onSelect,
+  selectedIds,
+  onToggle,
   showPrices,
 }: {
   services: Service[];
-  selectedId: string;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  onToggle: (id: string) => void;
   showPrices: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -384,7 +417,7 @@ function StepServicio({
   return (
     <Card>
       <CardBody>
-        <h2 className="mb-3 text-sm font-semibold text-[var(--color-ink-900)]">Elige un servicio</h2>
+        <h2 className="mb-3 text-sm font-semibold text-[var(--color-ink-900)]">Elige uno o más servicios</h2>
         {services.length === 0 ? (
           <EmptyState title="Aún no hay servicios disponibles" description="Vuelve pronto." />
         ) : (
@@ -395,25 +428,40 @@ function StepServicio({
             ) : (
               <div className="space-y-2">
                 {filteredServices.map((s) => {
-              const selected = s.id === selectedId;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => onSelect(s.id)}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-4 py-3 text-left transition-all",
-                    selected
-                      ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
-                      : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
-                  )}
-                >
-                  <span>
-                    <span className="block text-sm font-medium text-[var(--color-ink-900)]">{s.name}</span>
-                    <span className="block text-xs text-[var(--color-ink-500)]">
-                      {s.duration_minutes} min{s.category ? ` · ${s.category}` : ""}
-                    </span>
-                  </span>
-                      {showPrices && <span className="text-sm font-semibold text-[var(--color-ink-900)]">Desde {currency.format(s.price)}</span>}
+                  const selected = selectedIds.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => onToggle(s.id)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border px-4 py-3 text-left transition-all",
+                        selected
+                          ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
+                          : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+                      )}
+                    >
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span
+                          className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
+                            selected ? "border-transparent bg-[var(--color-ink-900)] text-white" : "border-[var(--color-border-strong)]"
+                          )}
+                        >
+                          {selected && "✓"}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-medium text-[var(--color-ink-900)]">{s.name}</span>
+                          <span className="block text-xs text-[var(--color-ink-500)]">
+                            {s.duration_minutes} min{s.category ? ` · ${s.category}` : ""}
+                          </span>
+                        </span>
+                      </span>
+                      {showPrices && (
+                        <span className="shrink-0 whitespace-nowrap text-sm font-semibold text-[var(--color-ink-900)]">
+                          Desde {currency.format(s.price)}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -532,7 +580,7 @@ function StepFechaHora({
 }
 
 function StepConfirmar({
-  service,
+  services,
   employee,
   day,
   time,
@@ -549,7 +597,7 @@ function StepConfirmar({
   onConfirm,
   onGoToLogin,
 }: {
-  service: Service;
+  services: Service[];
   employee: Employee;
   day: string;
   time: string;
@@ -566,6 +614,8 @@ function StepConfirmar({
   onConfirm: () => void;
   onGoToLogin: () => void;
 }) {
+  const totalPrice = services.reduce((sum, s) => sum + s.price, 0);
+  const servicesLabel = services.map((s) => s.name).join(", ");
   return (
     <Card>
       <CardBody className="space-y-4">
@@ -577,7 +627,11 @@ function StepConfirmar({
           </div>
         </div>
 
-        <Row label="Servicio" value={showPrices ? `${service.name} · Desde ${currency.format(service.price)}` : service.name} onEdit={() => onEdit(1)} />
+        <Row
+          label={services.length > 1 ? "Servicios" : "Servicio"}
+          value={showPrices ? `${servicesLabel} · Desde ${currency.format(totalPrice)}` : servicesLabel}
+          onEdit={() => onEdit(1)}
+        />
         <Row label="Profesional" value={employee.full_name} onEdit={() => onEdit(2)} />
         <Row
           label="Fecha y hora"

@@ -261,6 +261,13 @@ export interface Database {
         };
         Relationships: [];
       };
+      public_member_business: {
+        Row: {
+          business_member_id: string;
+          business_id: string;
+        };
+        Relationships: [];
+      };
     };
     Functions: Record<string, never>;
   };

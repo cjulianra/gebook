@@ -23,7 +23,11 @@ function timeToMinutes(hhmm: string) {
 async function computeFreeSlots(businessMemberId: string, day: string, durationMinutes: number) {
   const supabase = await createClient();
 
-  const { data: member } = await supabase.from("business_members").select("business_id").eq("id", businessMemberId).single();
+  const { data: member } = await supabase
+    .from("public_member_business")
+    .select("business_id")
+    .eq("business_member_id", businessMemberId)
+    .single();
   if (!member) return [];
 
   const [{ data: blocked }, { data: holiday }, { data: busy }] = await Promise.all([
