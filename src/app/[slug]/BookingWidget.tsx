@@ -95,11 +95,19 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
   const [day, setDay] = useState(initialDay);
   const [time, setTime] = useState(initialTime);
   const [step, setStep] = useState<Step>(initialEmployee ? 4 : initialTime ? 3 : initialServices.length > 0 ? 2 : 1);
-  const [employeeSlots, setEmployeeSlots] = useState<Record<string, string[]>>({});
+  // slots por servicio y por empleado elegible para ESE servicio (no por la
+  // intersección de todos) — así un negocio con personal especializado (uno
+  // hace cabello, otro uñas) puede combinar servicios sin que nadie los haga
+  // todos: cada servicio se asigna a quien SÍ lo hace y esté libre a esa hora.
+  const [serviceEmployeeSlots, setServiceEmployeeSlots] = useState<Record<string, Record<string, string[]>>>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [confirmedSummary, setConfirmedSummary] = useState<{ services: Service[]; employee: Employee; day: string; time: string } | null>(null);
+  const [confirmedSummary, setConfirmedSummary] = useState<{
+    assignments: { service: Service; employee: Employee }[];
+    day: string;
+    time: string;
+  } | null>(null);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [guestError, setGuestError] = useState<string | null>(null);
@@ -114,58 +122,120 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
   // El orden del catálogo decide el orden en que se encadenan los servicios.
   const selectedServices = services.filter((s) => serviceIds.includes(s.id));
-  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
 
-  // Un solo profesional atiende todos los servicios elegidos, uno tras otro —
-  // por eso debe estar asignado a TODOS, no solo a alguno.
-  const eligibleEmployees = useMemo(() => {
-    if (selectedServices.length === 0) return [];
-    return employees.filter((e) =>
-      selectedServices.every((s) => assignments.some((a) => a.service_id === s.id && a.business_member_id === e.business_member_id))
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedServices is derived fresh each render from serviceIds + services
-  }, [serviceIds, employees, assignments]);
+  function eligibleEmployeesForService(serviceId: string) {
+    return employees.filter((e) => assignments.some((a) => a.service_id === serviceId && a.business_member_id === e.business_member_id));
+  }
 
-  const employee = eligibleEmployees.find((e) => e.business_member_id === employeeId);
+  const employee = employees.find((e) => e.business_member_id === employeeId);
 
-  // Igual que en la reserva del negocio: primero se busca la disponibilidad
-  // de TODOS los profesionales elegibles para la duración total de los
-  // servicios y día elegidos, así las horas que se muestran siempre tienen a
-  // alguien disponible, y luego se puede ver quién específicamente está libre.
+  // Para cada servicio elegido, se busca la disponibilidad de cada empleado
+  // que SÍ realiza ese servicio en particular, usando la duración propia de
+  // ese servicio (no la suma total) — así se puede encadenar un servicio con
+  // un profesional y el siguiente con otro.
   useEffect(() => {
-    if (selectedServices.length === 0 || eligibleEmployees.length === 0) {
+    if (selectedServices.length === 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale slots when inputs are incomplete
-      setEmployeeSlots({});
+      setServiceEmployeeSlots({});
       return;
     }
     let cancelled = false;
     setLoadingSlots(true);
-    Promise.all(
-      eligibleEmployees.map(async (e) => {
-        const empSlots = await getAvailableSlots(e.business_member_id, day, totalDuration);
-        return [e.business_member_id, empSlots] as const;
-      })
-    ).then((results) => {
+    const tasks: Promise<readonly [string, string, string[]]>[] = [];
+    for (const svc of selectedServices) {
+      for (const emp of eligibleEmployeesForService(svc.id)) {
+        tasks.push(
+          getAvailableSlots(emp.business_member_id, day, svc.duration_minutes).then(
+            (slots) => [svc.id, emp.business_member_id, slots] as const
+          )
+        );
+      }
+    }
+    Promise.all(tasks).then((results) => {
       if (cancelled) return;
-      setEmployeeSlots(Object.fromEntries(results));
+      const next: Record<string, Record<string, string[]>> = {};
+      for (const [serviceId, empId, slots] of results) {
+        if (!next[serviceId]) next[serviceId] = {};
+        next[serviceId][empId] = slots;
+      }
+      setServiceEmployeeSlots(next);
       setLoadingSlots(false);
     });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- totalDuration derived from selectedServices, already tracked via serviceIds
-  }, [serviceIds, day, eligibleEmployees]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedServices/eligibleEmployeesForService derived fresh each render from serviceIds + services + employees + assignments
+  }, [serviceIds, day, employees, assignments]);
 
+  // Horas candidatas: para 1 servicio, la unión de horarios libres de sus
+  // profesionales elegibles. Para 2+ servicios, una hora solo cuenta si CADA
+  // servicio (encadenado uno tras otro desde esa hora) tiene a alguien que
+  // lo haga disponible en su propio tramo — sin exigir que sea la misma
+  // persona para todos.
   const candidateTimes = useMemo(() => {
-    const all = new Set<string>();
-    for (const e of eligibleEmployees) {
-      for (const t of employeeSlots[e.business_member_id] ?? []) all.add(t);
+    if (selectedServices.length === 0) return [];
+    const first = selectedServices[0];
+    const basePool = new Set<string>();
+    for (const emp of eligibleEmployeesForService(first.id)) {
+      for (const t of serviceEmployeeSlots[first.id]?.[emp.business_member_id] ?? []) basePool.add(t);
     }
-    return Array.from(all).sort();
-  }, [eligibleEmployees, employeeSlots]);
+    if (selectedServices.length === 1) return Array.from(basePool).sort();
+
+    const valid: string[] = [];
+    for (const t of basePool) {
+      let cursor = t;
+      let ok = true;
+      for (const svc of selectedServices) {
+        const subTime = cursor;
+        const anyFree = eligibleEmployeesForService(svc.id).some((emp) =>
+          (serviceEmployeeSlots[svc.id]?.[emp.business_member_id] ?? []).includes(subTime)
+        );
+        if (!anyFree) {
+          ok = false;
+          break;
+        }
+        cursor = addMinutes(cursor, svc.duration_minutes);
+      }
+      if (ok) valid.push(t);
+    }
+    return valid.sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- eligibleEmployeesForService/selectedServices derived fresh each render from serviceIds + employees + assignments
+  }, [serviceIds, serviceEmployeeSlots, employees, assignments]);
+
+  // A partir de la hora elegida, le asigna a cada servicio un profesional
+  // disponible en su tramo — prefiriendo seguir con el mismo de el servicio
+  // anterior si puede, para no partir la cita entre más gente de la
+  // necesaria. Si la cadena se corta (no debería, candidateTimes ya filtra),
+  // queda incompleta y el paso de confirmación lo refleja.
+  const autoAssignments = useMemo(() => {
+    if (!time || selectedServices.length === 0) return [];
+    const result: { service: Service; employee: Employee }[] = [];
+    let cursor = time;
+    let lastEmployeeId: string | null = null;
+    for (const svc of selectedServices) {
+      const subTime = cursor;
+      const eligible = eligibleEmployeesForService(svc.id);
+      const slotsMap = serviceEmployeeSlots[svc.id] ?? {};
+      let chosen: Employee | undefined = lastEmployeeId
+        ? eligible.find((e) => e.business_member_id === lastEmployeeId && (slotsMap[lastEmployeeId] ?? []).includes(subTime))
+        : undefined;
+      if (!chosen) chosen = eligible.find((e) => (slotsMap[e.business_member_id] ?? []).includes(subTime));
+      if (!chosen) break;
+      result.push({ service: svc, employee: chosen });
+      lastEmployeeId = chosen.business_member_id;
+      cursor = addMinutes(cursor, svc.duration_minutes);
+    }
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- eligibleEmployeesForService/selectedServices derived fresh each render from serviceIds + employees + assignments
+  }, [time, serviceIds, serviceEmployeeSlots, employees, assignments]);
+
+  const finalAssignments: { service: Service; employee: Employee }[] =
+    selectedServices.length === 1 ? (employee ? [{ service: selectedServices[0], employee }] : []) : autoAssignments;
 
   function isEmployeeAvailable(id: string) {
-    return (employeeSlots[id] ?? []).includes(time);
+    const first = selectedServices[0];
+    if (!first) return false;
+    return (serviceEmployeeSlots[first.id]?.[id] ?? []).includes(time);
   }
 
   function toggleService(id: string) {
@@ -177,7 +247,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
   function canAdvance() {
     if (step === 1) return selectedServices.length > 0;
     if (step === 2) return !!time;
-    if (step === 3) return !!employeeId && isEmployeeAvailable(employeeId);
+    if (step === 3) return finalAssignments.length === selectedServices.length && selectedServices.length > 0;
     return true;
   }
 
@@ -196,7 +266,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
   }
 
   async function handleConfirm() {
-    if (selectedServices.length === 0 || !employeeId || !time) return;
+    if (finalAssignments.length === 0 || finalAssignments.length !== selectedServices.length || !time) return;
 
     if (!userEmail) {
       setGuestError(null);
@@ -206,14 +276,14 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
 
     setConfirming(true);
     let cursor = time;
-    for (const svc of selectedServices) {
+    for (const a of finalAssignments) {
       const result = await confirmBooking({
         businessId: business.id,
-        serviceId: svc.id,
-        businessMemberId: employeeId,
+        serviceId: a.service.id,
+        businessMemberId: a.employee.business_member_id,
         day,
         time: cursor,
-        durationMinutes: svc.duration_minutes,
+        durationMinutes: a.service.duration_minutes,
         guestName: guestName.trim() || undefined,
         guestPhone: guestPhone.trim() || undefined,
       });
@@ -222,15 +292,16 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
         showToast(result.error, "danger");
         return;
       }
-      cursor = addMinutes(cursor, svc.duration_minutes);
+      cursor = addMinutes(cursor, a.service.duration_minutes);
     }
     setConfirming(false);
-    setConfirmedSummary({ services: selectedServices, employee: employee!, day, time });
+    setConfirmedSummary({ assignments: finalAssignments, day, time });
     setConfirmed(true);
   }
 
   if (confirmed && confirmedSummary) {
-    const { services: bookedServices, employee: bookedEmployee, day: bookedDay, time: bookedTime } = confirmedSummary;
+    const { assignments: bookedAssignments, day: bookedDay, time: bookedTime } = confirmedSummary;
+    const bookedEmployeeNames = Array.from(new Set(bookedAssignments.map((a) => a.employee.full_name)));
     return (
       <div className="gradient-canvas flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
@@ -239,7 +310,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
             <div>
               <h1 className="text-lg font-semibold text-[var(--color-ink-900)]">Reserva confirmada</h1>
               <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-                {bookedServices.map((s) => s.name).join(", ")} con {bookedEmployee.full_name}
+                {bookedAssignments.map((a) => a.service.name).join(", ")} con {bookedEmployeeNames.join(", ")}
                 <br />
                 {bogotaDateTime(bookedDay, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · {formatTime12h(bookedTime)}
               </p>
@@ -314,14 +385,20 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
           />
         )}
 
-        {step === 3 && selectedServices.length > 0 && time && (
-          <StepProfesional employees={eligibleEmployees} selectedId={employeeId} isAvailable={isEmployeeAvailable} onSelect={setEmployeeId} />
+        {step === 3 && selectedServices.length === 1 && time && (
+          <StepProfesional
+            employees={eligibleEmployeesForService(selectedServices[0].id)}
+            selectedId={employeeId}
+            isAvailable={isEmployeeAvailable}
+            onSelect={setEmployeeId}
+          />
         )}
 
-        {step === 4 && selectedServices.length > 0 && employee && time && (
+        {step === 3 && selectedServices.length > 1 && time && <StepAutoAsignado assignments={autoAssignments} />}
+
+        {step === 4 && finalAssignments.length === selectedServices.length && finalAssignments.length > 0 && time && (
           <StepConfirmar
-            services={selectedServices}
-            employee={employee}
+            assignments={finalAssignments}
             day={day}
             time={time}
             showPrices={business.show_prices}
@@ -528,6 +605,37 @@ function StepProfesional({
   );
 }
 
+function StepAutoAsignado({ assignments }: { assignments: { service: Service; employee: Employee }[] }) {
+  return (
+    <Card>
+      <CardBody>
+        <h2 className="mb-1 text-sm font-semibold text-[var(--color-ink-900)]">¿Quién te atiende?</h2>
+        <p className="mb-3 text-xs text-[var(--color-ink-500)]">
+          Asignamos automáticamente a quien esté disponible para cada servicio a esa hora.
+        </p>
+        {assignments.length === 0 ? (
+          <EmptyState title="Elige una hora disponible" description="Vuelve al paso anterior para elegir fecha y hora." />
+        ) : (
+          <div className="space-y-2">
+            {assignments.map(({ service, employee }) => (
+              <div key={service.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-3">
+                <span>
+                  <span className="block text-sm font-medium text-[var(--color-ink-900)]">{service.name}</span>
+                  <span className="block text-xs text-[var(--color-ink-500)]">{service.duration_minutes} min</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <Avatar name={employee.full_name} src={employee.photo_url} size={32} />
+                  <span className="text-sm font-medium text-[var(--color-ink-900)]">{employee.full_name}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
 function StepFechaHora({
   day,
   time,
@@ -580,8 +688,7 @@ function StepFechaHora({
 }
 
 function StepConfirmar({
-  services,
-  employee,
+  assignments,
   day,
   time,
   showPrices,
@@ -597,8 +704,7 @@ function StepConfirmar({
   onConfirm,
   onGoToLogin,
 }: {
-  services: Service[];
-  employee: Employee;
+  assignments: { service: Service; employee: Employee }[];
   day: string;
   time: string;
   showPrices: boolean;
@@ -614,29 +720,49 @@ function StepConfirmar({
   onConfirm: () => void;
   onGoToLogin: () => void;
 }) {
-  const totalPrice = services.reduce((sum, s) => sum + s.price, 0);
-  const servicesLabel = services.map((s) => s.name).join(", ");
+  const totalPrice = assignments.reduce((sum, a) => sum + a.service.price, 0);
+  const uniqueEmployees = Array.from(new Map(assignments.map((a) => [a.employee.business_member_id, a.employee])).values());
+  const singleEmployee = uniqueEmployees.length === 1 ? uniqueEmployees[0] : null;
+  const isMulti = assignments.length > 1;
+
   return (
     <Card>
       <CardBody className="space-y-4">
-        <div className="flex items-center gap-3 border-b border-[var(--color-border)] pb-4">
-          <Avatar name={employee.full_name} src={employee.photo_url} size={44} />
-          <div>
-            <p className="text-sm font-medium text-[var(--color-ink-900)]">{employee.full_name}</p>
-            {employee.specialty && <p className="text-xs text-[var(--color-ink-500)]">{employee.specialty}</p>}
+        {singleEmployee && (
+          <div className="flex items-center gap-3 border-b border-[var(--color-border)] pb-4">
+            <Avatar name={singleEmployee.full_name} src={singleEmployee.photo_url} size={44} />
+            <div>
+              <p className="text-sm font-medium text-[var(--color-ink-900)]">{singleEmployee.full_name}</p>
+              {singleEmployee.specialty && <p className="text-xs text-[var(--color-ink-500)]">{singleEmployee.specialty}</p>}
+            </div>
           </div>
+        )}
+
+        <div>
+          <button type="button" onClick={() => onEdit(1)} className="block w-full text-left text-sm">
+            <span className="block text-[var(--color-ink-500)]">{isMulti ? "Servicios" : "Servicio"}</span>
+          </button>
+          <ul className="mt-1 space-y-1.5">
+            {assignments.map((a) => (
+              <li key={a.service.id} className="flex items-center justify-between gap-2 text-sm">
+                <span className="font-medium text-[var(--color-ink-900)]">{a.service.name}</span>
+                <span className="shrink-0 text-xs text-[var(--color-ink-500)]">
+                  {!singleEmployee && `${a.employee.full_name}${showPrices ? " · " : ""}`}
+                  {showPrices && `Desde ${currency.format(a.service.price)}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {isMulti && showPrices && (
+            <p className="mt-1.5 text-right text-sm font-semibold text-[var(--color-ink-900)]">Total: {currency.format(totalPrice)}</p>
+          )}
         </div>
 
-        <Row
-          label={services.length > 1 ? "Servicios" : "Servicio"}
-          value={showPrices ? `${servicesLabel} · Desde ${currency.format(totalPrice)}` : servicesLabel}
-          onEdit={() => onEdit(1)}
-        />
-        <Row label="Profesional" value={employee.full_name} onEdit={() => onEdit(2)} />
+        {singleEmployee && <Row label="Profesional" value={singleEmployee.full_name} onEdit={() => onEdit(3)} />}
         <Row
           label="Fecha y hora"
           value={`${bogotaDateTime(day, "00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: BOGOTA_TZ })} · ${formatTime12h(time)}`}
-          onEdit={() => onEdit(3)}
+          onEdit={() => onEdit(2)}
         />
 
         {authChecked && !loggedIn && (
