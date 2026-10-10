@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
@@ -38,6 +39,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 export function AdminDashboardClient({ rows }: { rows: BusinessRow[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
 
   const filtered = rows.filter((r) => {
@@ -98,7 +100,11 @@ export function AdminDashboardClient({ rows }: { rows: BusinessRow[] }) {
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
                   {filtered.map((r) => (
-                    <tr key={r.id}>
+                    <tr
+                      key={r.id}
+                      onClick={() => router.push(`/admin/${r.id}`)}
+                      className="cursor-pointer hover:bg-[var(--color-canvas)]"
+                    >
                       <td className="py-3 pr-4">
                         <p className="font-medium text-[var(--color-ink-900)]">{r.name}</p>
                         {(r.city || r.neighborhood) && (
@@ -115,6 +121,7 @@ export function AdminDashboardClient({ rows }: { rows: BusinessRow[] }) {
                           href={`/${r.slug}`}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="font-medium text-[var(--color-accent)] hover:underline"
                         >
                           /{r.slug}
@@ -125,7 +132,7 @@ export function AdminDashboardClient({ rows }: { rows: BusinessRow[] }) {
                       <td className="py-3 pr-4 text-right tabular-nums text-[var(--color-ink-900)]">{r.bookingsWeek}</td>
                       <td className="py-3 pr-4 text-right tabular-nums text-[var(--color-ink-900)]">{r.bookingsMonth}</td>
                       <td className="py-3 text-right">
-                        <Badge tone={r.isActive ? "success" : "neutral"}>{r.isActive ? "Activo" : "Inactivo"}</Badge>
+                        <Badge tone={r.isActive ? "success" : "danger"}>{r.isActive ? "Activo" : "Bloqueado"}</Badge>
                       </td>
                     </tr>
                   ))}
