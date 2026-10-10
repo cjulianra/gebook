@@ -247,10 +247,10 @@ function Inner({
           <CardTitle>Logo</CardTitle>
         </CardHeader>
         <CardBody>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-start gap-4">
             <div
               className={cn(
-                "flex h-20 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
+                "flex h-20 max-w-full shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)]",
                 logoUrl ? "min-w-20 bg-[var(--color-canvas)] px-2" : "w-20 [background:var(--gradient-accent)]"
               )}
             >
@@ -258,7 +258,7 @@ function Inner({
                 // Los logos suelen ser horizontales: se muestra completo (sin
                 // recortar), con alto fijo y ancho libre según su proporción.
                 // eslint-disable-next-line @next/next/no-img-element -- logo lives in Supabase Storage, a dynamic external host
-                <img src={logoUrl} alt={business.name} className="h-full w-auto object-contain" />
+                <img src={logoUrl} alt={business.name} className="h-full w-auto max-w-full object-contain" />
               ) : (
                 <span className="text-2xl font-semibold text-[var(--color-accent-ink)]">{business.name[0]?.toUpperCase()}</span>
               )}

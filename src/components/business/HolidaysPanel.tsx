@@ -30,7 +30,6 @@ export function HolidaysPanel({
   onChange: (holidays: Holiday[]) => void;
 }) {
   const [date, setDate] = useState("");
-  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -45,7 +44,7 @@ export function HolidaysPanel({
     const supabase = createClient();
     const { data, error: insertError } = await supabase
       .from("business_holidays")
-      .insert({ business_id: businessId, holiday_date: date, name: name.trim() || null })
+      .insert({ business_id: businessId, holiday_date: date })
       .select()
       .single();
     setLoading(false);
@@ -55,7 +54,6 @@ export function HolidaysPanel({
     }
     onChange([...holidays, data]);
     setDate("");
-    setName("");
   }
 
   async function handleDelete(id: string) {
@@ -73,12 +71,7 @@ export function HolidaysPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
-        <div>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Elige una fecha" className="h-9" />
-        </div>
-        <div className="flex-1 min-w-[140px]">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre (opcional)" className="h-9" />
-        </div>
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Elige una fecha" className="h-9" />
         <Button type="button" size="sm" onClick={handleAdd} disabled={loading}>
           {loading ? "Agregando…" : "Agregar festivo"}
         </Button>
