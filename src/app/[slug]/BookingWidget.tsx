@@ -374,6 +374,13 @@ function StepServicio({
   onSelect: (id: string) => void;
   showPrices: boolean;
 }) {
+  const [query, setQuery] = useState("");
+  const filteredServices = services.filter((s) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q) || (s.category ?? "").toLowerCase().includes(q);
+  });
+
   return (
     <Card>
       <CardBody>
@@ -381,8 +388,13 @@ function StepServicio({
         {services.length === 0 ? (
           <EmptyState title="Aún no hay servicios disponibles" description="Vuelve pronto." />
         ) : (
-          <div className="space-y-2">
-            {services.map((s) => {
+          <div className="space-y-3">
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" />
+            {filteredServices.length === 0 ? (
+              <EmptyState title="Sin resultados" description="Ningún servicio coincide con tu búsqueda." />
+            ) : (
+              <div className="space-y-2">
+                {filteredServices.map((s) => {
               const selected = s.id === selectedId;
               return (
                 <button
@@ -401,10 +413,12 @@ function StepServicio({
                       {s.duration_minutes} min{s.category ? ` · ${s.category}` : ""}
                     </span>
                   </span>
-                  {showPrices && <span className="text-sm font-semibold text-[var(--color-ink-900)]">Desde {currency.format(s.price)}</span>}
-                </button>
-              );
-            })}
+                      {showPrices && <span className="text-sm font-semibold text-[var(--color-ink-900)]">Desde {currency.format(s.price)}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </CardBody>

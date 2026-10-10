@@ -26,7 +26,14 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
   const [toDelete, setToDelete] = useState<Service | null>(null);
+  const [query, setQuery] = useState("");
   const showToast = useToast();
+
+  const filteredServices = services.filter((s) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q) || (s.category ?? "").toLowerCase().includes(q);
+  });
 
   function openCreate() {
     setEditing(null);
@@ -68,6 +75,14 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
         action={<Button onClick={openCreate}>{services.length === 0 ? "Crear servicio" : "Agregar otro servicio"}</Button>}
       />
 
+      {services.length > 0 && (
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar servicio por nombre o categoría…"
+        />
+      )}
+
       <Card>
         {services.length === 0 ? (
           <EmptyState
@@ -75,9 +90,11 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
             description="Crea tu primer servicio para empezar a recibir reservas."
             action={{ label: "Crear servicio", onClick: openCreate }}
           />
+        ) : filteredServices.length === 0 ? (
+          <EmptyState title="Sin resultados" description="Ningún servicio coincide con tu búsqueda." />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
-            {services.map((service) => (
+            {filteredServices.map((service) => (
               <div key={service.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
