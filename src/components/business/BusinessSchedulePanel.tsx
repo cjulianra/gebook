@@ -100,6 +100,7 @@ export function BusinessSchedulePanel({
                   value={row.start}
                   disabled={!row.enabled}
                   onChange={(e) => updateRow(row.type, { start: e.target.value })}
+                  placeholder="Hora de inicio"
                   className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
                 />
                 <span className="text-[var(--color-ink-400)]">–</span>
@@ -108,6 +109,7 @@ export function BusinessSchedulePanel({
                   value={row.end}
                   disabled={!row.enabled}
                   onChange={(e) => updateRow(row.type, { end: e.target.value })}
+                  placeholder="Hora de fin"
                   className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
                 />
               </div>

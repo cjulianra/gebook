@@ -661,7 +661,7 @@ function NewBookingModal({
         <div>
           <Label>Hora</Label>
           {quickMode ? (
-            <Input type="time" value={time} onChange={(e) => selectTime(e.target.value)} />
+            <Input type="time" value={time} onChange={(e) => selectTime(e.target.value)} placeholder="Elige una hora" />
           ) : loadingSlots ? (
             <p className="text-sm text-[var(--color-ink-500)]">Buscando horarios…</p>
           ) : candidateTimes.length === 0 ? (

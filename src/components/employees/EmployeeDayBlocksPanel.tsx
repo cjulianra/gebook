@@ -77,7 +77,7 @@ export function EmployeeDayBlocksPanel({
         pueda atender (permiso, incapacidad, etc.). Ese día no le llegarán reservas nuevas.
       </p>
       <div className="flex flex-wrap items-end gap-2">
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9" />
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Elige una fecha" className="h-9" />
         <div className="flex-1 min-w-[140px]">
           <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo (opcional)" className="h-9" />
         </div>

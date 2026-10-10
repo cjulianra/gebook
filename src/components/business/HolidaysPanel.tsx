@@ -74,7 +74,7 @@ export function HolidaysPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
         <div>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9" />
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Elige una fecha" className="h-9" />
         </div>
         <div className="flex-1 min-w-[140px]">
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre (opcional)" className="h-9" />
