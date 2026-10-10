@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
+import { InstallNotificationsSettings } from "@/components/pwa/InstallNotificationsSettings";
 
 interface DayBlock {
   id: string;
@@ -140,6 +141,15 @@ function Inner({
           <p className="mt-3 text-xs text-[var(--color-ink-500)]">
             Esta foto se usa en tu perfil, en la agenda del negocio y en la página pública de reservas.
           </p>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Instalación y notificaciones</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <InstallNotificationsSettings memberId={memberId} />
         </CardBody>
       </Card>
 

@@ -12,6 +12,8 @@ import { CITIES, NEIGHBORHOODS_BY_CITY } from "@/lib/data/santanderLocations";
 import { cn } from "@/lib/utils/cn";
 import { BusinessSchedulePanel, type BusinessSchedule } from "@/components/business/BusinessSchedulePanel";
 import { HolidaysPanel, type Holiday } from "@/components/business/HolidaysPanel";
+import { InstallNotificationsSettings } from "@/components/pwa/InstallNotificationsSettings";
+import { useBusiness } from "@/lib/context/BusinessContext";
 
 type Business = Database["public"]["Tables"]["businesses"]["Row"];
 
@@ -41,6 +43,7 @@ function Inner({
   initialHolidays: Holiday[];
 }) {
   const showToast = useToast();
+  const { membership } = useBusiness();
   const [schedules, setSchedules] = useState(initialSchedules);
   const [holidays, setHolidays] = useState(initialHolidays);
   const [logoUrl, setLogoUrl] = useState(business.logo_url);
@@ -174,6 +177,15 @@ function Inner({
               {copied ? "¡Copiado!" : "Copiar link"}
             </Button>
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Instalación y notificaciones</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <InstallNotificationsSettings memberId={membership.id} />
         </CardBody>
       </Card>
 
