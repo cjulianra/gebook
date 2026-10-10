@@ -14,7 +14,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
         .from("business_members")
         .select("id, role, status, created_at, profiles(id, full_name, email, avatar_url), employee_details(phone, specialty, photo_url, commission_rate, can_create_bookings, can_view_clients)")
         .eq("business_id", business.id)
-        .eq("role", "employee")
+        .in("role", ["employee", "admin"])
         .order("created_at", { ascending: false }),
       supabase.from("services").select("id, name").eq("business_id", business.id).eq("is_active", true),
       supabase.from("employee_services").select("business_member_id, service_id"),

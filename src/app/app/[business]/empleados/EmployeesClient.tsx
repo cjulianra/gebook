@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
 import { EmployeeDayBlocksPanel, type DayBlock } from "@/components/employees/EmployeeDayBlocksPanel";
 import { cn } from "@/lib/utils/cn";
-import { createEmployee, getInviteDetails, removeEmployee } from "./actions";
+import { createEmployee, getInviteDetails, removeEmployee, setMemberAdmin } from "./actions";
 
 interface Member {
   id: string;
@@ -140,6 +140,7 @@ export function EmployeesClient({
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar name={profile.full_name} src={details?.photo_url} size={36} />
                       <p className="truncate font-medium text-[var(--color-ink-900)]">{profile.full_name}</p>
+                      {member.role === "admin" && <Badge tone="success">Admin</Badge>}
                     </div>
                     <Badge tone="accent" className="w-fit">
                       Comisión {details?.commission_rate ?? 40}%
@@ -192,6 +193,11 @@ export function EmployeesClient({
                       </div>
                     </div>
                     <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto">
+                      {member.role === "admin" && (
+                        <Badge tone="success" className="shrink-0">
+                          Admin
+                        </Badge>
+                      )}
                       {member.status === "inactive" && (
                         <Badge tone="neutral" className="shrink-0">
                           Inactivo
@@ -289,6 +295,10 @@ export function EmployeesClient({
               })
             );
             showToast("Permisos actualizados.");
+          }}
+          onRoleSaved={(isAdmin) => {
+            setMembers((prev) => prev.map((m) => (m.id !== configFor.id ? m : { ...m, role: isAdmin ? "admin" : "employee" })));
+            showToast(isAdmin ? "Ahora es administrador." : "Ya no es administrador.");
           }}
           onPhotoSaved={(photoUrl) => {
             setMembers((prev) =>
@@ -451,6 +461,7 @@ const TABS = [
   { key: "bloqueos", label: "Bloqueos" },
   { key: "comision", label: "Comisión" },
   { key: "permisos", label: "Permisos" },
+  { key: "rol", label: "Rol" },
   { key: "cuenta", label: "Liquidar" },
   { key: "desactivar", label: "Desactivar" },
 ] as const;
@@ -471,6 +482,7 @@ function EmployeeConfigModal({
   onPayoutRegistered,
   onPhotoSaved,
   onPermissionSaved,
+  onRoleSaved,
   onDeactivate,
 }: {
   member: Member;
@@ -487,16 +499,18 @@ function EmployeeConfigModal({
   onPayoutRegistered: (payout: Payout) => void;
   onPhotoSaved: (photoUrl: string) => void;
   onPermissionSaved: (canCreateBookings: boolean, canViewClients: boolean) => void;
+  onRoleSaved: (isAdmin: boolean) => void;
   onDeactivate: () => void;
 }) {
   const profile = one(member.profiles)!;
   const [tab, setTab] = useState<TabKey>("foto");
+  const visibleTabs = TABS.filter((t) => t.key !== "rol" || member.role !== "owner");
 
   return (
     <Modal open onClose={onClose} title={`Configuración de ${profile.full_name}`} size="lg">
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2 border-b border-[var(--color-border)] pb-3">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
@@ -519,6 +533,7 @@ function EmployeeConfigModal({
         {tab === "bloqueos" && <EmployeeDayBlocksPanel memberId={member.id} blocks={dayBlocks} onChange={onDayBlocksChanged} />}
         {tab === "comision" && <CommissionPanel member={member} onSaved={onCommissionSaved} />}
         {tab === "permisos" && <PermissionsPanel member={member} onSaved={onPermissionSaved} />}
+        {tab === "rol" && <RolePanel member={member} businessId={businessId} onSaved={onRoleSaved} />}
         {tab === "cuenta" && (
           <AccountPanel memberId={member.id} payouts={payouts} earned={earned} businessId={businessId} onRegistered={onPayoutRegistered} />
         )}
@@ -677,6 +692,42 @@ function PermissionsPanel({ member, onSaved }: { member: Member; onSaved: (canCr
       </label>
       <Button size="sm" onClick={handleSave} disabled={loading}>
         {loading ? "Guardando…" : "Guardar permisos"}
+      </Button>
+    </div>
+  );
+}
+
+function RolePanel({ member, businessId, onSaved }: { member: Member; businessId: string; onSaved: (isAdmin: boolean) => void }) {
+  const [isAdmin, setIsAdmin] = useState(member.role === "admin");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const name = one(member.profiles)?.full_name.split(" ")[0] ?? "Este empleado";
+
+  async function handleToggle() {
+    setError(null);
+    setLoading(true);
+    const result = await setMemberAdmin(businessId, member.id, !isAdmin);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setIsAdmin(!isAdmin);
+    onSaved(!isAdmin);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2.5">
+        <p className="text-sm font-medium text-[var(--color-ink-900)]">{isAdmin ? "Es administrador" : "Hacer administrador"}</p>
+        <p className="mt-0.5 text-xs text-[var(--color-ink-500)]">
+          Un administrador tiene los mismos permisos que el dueño: puede crear reservas para cualquier empleado, gestionar servicios,
+          empleados, comisiones y la configuración del negocio.
+        </p>
+      </div>
+      <FieldError>{error ?? undefined}</FieldError>
+      <Button size="sm" variant={isAdmin ? "danger-soft" : "primary"} onClick={handleToggle} disabled={loading}>
+        {loading ? "Guardando…" : isAdmin ? `Quitar privilegios de administrador a ${name}` : `Hacer a ${name} administrador`}
       </Button>
     </div>
   );

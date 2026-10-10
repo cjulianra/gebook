@@ -127,3 +127,25 @@ export async function removeEmployee(businessId: string, memberId: string) {
   if (error) return { error: "No pudimos desactivar al empleado." };
   return { data: true };
 }
+
+/**
+ * Sube a un empleado a administrador (puede crear reservas para cualquier
+ * empleado, gestionar servicios, otros empleados, configuración, etc.) o lo
+ * vuelve a bajar a empleado normal. El dueño (owner) nunca cambia de rol
+ * desde aquí.
+ */
+export async function setMemberAdmin(businessId: string, memberId: string, isAdmin: boolean) {
+  await assertIsBusinessAdmin(businessId);
+  const admin = createAdminClient();
+
+  const { data: member } = await admin.from("business_members").select("role").eq("id", memberId).eq("business_id", businessId).maybeSingle();
+  if (!member) return { error: "No encontramos a este empleado." };
+  if (member.role === "owner") return { error: "El dueño ya tiene todos los permisos." };
+
+  const { error } = await admin
+    .from("business_members")
+    .update({ role: isAdmin ? "admin" : "employee" })
+    .eq("id", memberId);
+  if (error) return { error: "No pudimos actualizar el rol." };
+  return { data: true };
+}
