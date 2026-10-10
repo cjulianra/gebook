@@ -68,6 +68,20 @@ export function BookingWidget(props: {
   );
 }
 
+// getAvailableSlots solo devuelve horas en la rejilla de 30 min (09:00,
+// 09:30, …). Si un servicio dura, por ejemplo, 75 min, el siguiente servicio
+// de la cadena caería en una hora "suelta" (09:15) que nunca va a coincidir
+// con ningún slot válido — por eso hay que redondear hacia arriba a la
+// rejilla antes de buscar disponibilidad del siguiente servicio.
+function roundUpToStep(time: string, step = 30) {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m;
+  const rounded = Math.ceil(total / step) * step;
+  const hh = Math.floor(rounded / 60) % 24;
+  const mm = rounded % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
 function todayKey() {
   return todayInBogota();
 }
@@ -194,7 +208,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
           ok = false;
           break;
         }
-        cursor = addMinutes(cursor, svc.duration_minutes);
+        cursor = roundUpToStep(addMinutes(cursor, svc.duration_minutes));
       }
       if (ok) valid.push(t);
     }
@@ -223,7 +237,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
       if (!chosen) break;
       result.push({ service: svc, employee: chosen });
       lastEmployeeId = chosen.business_member_id;
-      cursor = addMinutes(cursor, svc.duration_minutes);
+      cursor = roundUpToStep(addMinutes(cursor, svc.duration_minutes));
     }
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- eligibleEmployeesForService/selectedServices derived fresh each render from serviceIds + employees + assignments
@@ -292,7 +306,7 @@ function BookingWidgetInner({ business, services, employees, assignments }: {
         showToast(result.error, "danger");
         return;
       }
-      cursor = addMinutes(cursor, a.service.duration_minutes);
+      cursor = roundUpToStep(addMinutes(cursor, a.service.duration_minutes));
     }
     setConfirming(false);
     setConfirmedSummary({ assignments: finalAssignments, day, time });
