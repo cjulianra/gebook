@@ -10,6 +10,7 @@ import { useBusiness } from "@/lib/context/BusinessContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
+import { PushNotificationsPrompt } from "@/components/pwa/PushNotificationsPrompt";
 
 // En mobile solo caben unos pocos tabs abajo; el resto vive detrás del menú hamburguesa.
 const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes", "mis-reportes", "mi-perfil"];
@@ -142,6 +143,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onLogout={handleLogout}
         noPrefetch={noPrefetch}
       />
+
+      {!onboardingStep && <PushNotificationsPrompt memberId={membership.id} />}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { useBusiness } from "@/lib/context/BusinessContext";
 import { cn } from "@/lib/utils/cn";
 import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { getAvailableSlots } from "@/app/[slug]/actions";
+import { notifyBookingCreated } from "./actions";
 import { BookingRow } from "@/components/bookings/BookingRow";
 import { EditBookingModal } from "@/components/bookings/EditBookingModal";
 import {
@@ -478,7 +479,7 @@ function NewBookingModal({
       const employee = employees.find((e) => e.id === entry.employeeId) ?? null;
       onCreated({ ...result.data, clients: clientRecord, services: entry.service, business_members: employee } as unknown as Booking);
 
-      if (entry.employeeId !== lockedEmployeeId && entry.service) {
+      if (entry.service) {
         const list = employeeSummary.get(entry.employeeId) ?? [];
         list.push(`${entry.service.name} a las ${formatTime12h(entry.start)}`);
         employeeSummary.set(entry.employeeId, list);
@@ -489,13 +490,12 @@ function NewBookingModal({
 
     const clientName = clientRecord ? `${clientRecord.first_name} ${clientRecord.last_name ?? ""}`.trim() : "un cliente";
     for (const [empId, serviceDescriptions] of employeeSummary) {
-      await supabase.from("notifications").insert({
-        business_id: businessId,
-        business_member_id: empId,
-        title: serviceDescriptions.length > 1 ? "Nuevas reservas confirmadas" : "Nueva reserva confirmada",
-        body: `${clientName}: ${serviceDescriptions.join(", ")}.`,
-        link: "/reservas",
-      });
+      notifyBookingCreated(
+        businessId,
+        [empId],
+        serviceDescriptions.length > 1 ? "Nuevas reservas confirmadas" : "Nueva reserva confirmada",
+        `${clientName}: ${serviceDescriptions.join(", ")}.`
+      ).catch(() => {});
     }
 
     // reset para la próxima reserva

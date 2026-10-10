@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { bogotaDateTime, weekdayOf } from "@/lib/utils/dateRange";
+import { bogotaDateTime, weekdayOf, formatTime12h } from "@/lib/utils/dateRange";
+import { notifyNewBooking } from "@/lib/push/send";
 
 const SLOT_STEP_MINUTES = 30;
 
@@ -102,6 +103,7 @@ export async function confirmBooking(input: ConfirmBookingInput) {
   const admin = createAdminClient();
 
   let clientId: string;
+  let clientName: string;
 
   if (user) {
     // Cliente con cuenta: se vincula a su user_id, así ve su historial en /portal.
@@ -132,6 +134,7 @@ export async function confirmBooking(input: ConfirmBookingInput) {
       clientRow = created;
     }
     clientId = clientRow.id;
+    clientName = profile.full_name;
   } else {
     // Invitado sin cuenta: solo necesita nombre y WhatsApp — no se exige login para reservar.
     const guestName = input.guestName?.trim();
@@ -164,6 +167,7 @@ export async function confirmBooking(input: ConfirmBookingInput) {
       clientRow = created;
     }
     clientId = clientRow.id;
+    clientName = guestName;
   }
 
   const startAt = bogotaDateTime(input.day, `${input.time}:00`);
@@ -180,6 +184,13 @@ export async function confirmBooking(input: ConfirmBookingInput) {
   });
 
   if (bookingError) return { error: "No pudimos crear la reserva. Intenta de nuevo." };
+
+  const { data: service } = await admin.from("services").select("name").eq("id", input.serviceId).single();
+  notifyNewBooking(input.businessId, [input.businessMemberId], {
+    title: "Nueva reserva",
+    body: `${clientName}: ${service?.name ?? "un servicio"} el ${input.day} a las ${formatTime12h(input.time)}.`,
+    link: "/reservas",
+  }).catch(() => {});
 
   return { data: true };
 }

@@ -153,6 +153,15 @@ type NotificationRow = {
   created_at: string;
 }
 
+type PushSubscriptionRow = {
+  id: string;
+  business_member_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -239,6 +248,12 @@ export interface Database {
         Row: NotificationRow;
         Insert: Partial<NotificationRow> & Pick<NotificationRow, "business_id" | "business_member_id" | "title" | "body">;
         Update: Partial<NotificationRow>;
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: PushSubscriptionRow;
+        Insert: Partial<PushSubscriptionRow> & Pick<PushSubscriptionRow, "business_member_id" | "endpoint" | "p256dh" | "auth">;
+        Update: Partial<PushSubscriptionRow>;
         Relationships: [];
       };
     };
