@@ -261,6 +261,7 @@ function NewBookingModal({
   const [newLastName, setNewLastName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [lines, setLines] = useState<{ serviceId: string; employeeId: string }[]>([]);
+  const [serviceQuery, setServiceQuery] = useState("");
   const [bookingDay, setBookingDay] = useState(day);
   const [time, setTime] = useState("");
   const [quickMode, setQuickMode] = useState(false);
@@ -578,8 +579,20 @@ function NewBookingModal({
             muestra su duración y precio, y se pueden marcar varios. */}
         <div>
           <Label>Servicios</Label>
+          <Input
+            value={serviceQuery}
+            onChange={(e) => setServiceQuery(e.target.value)}
+            placeholder="Buscar servicio…"
+            className="mb-2"
+          />
           <div className="max-h-72 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
-            {services.map((s) => {
+            {services
+              .filter((s) => {
+                const q = serviceQuery.trim().toLowerCase();
+                if (!q) return true;
+                return s.name.toLowerCase().includes(q);
+              })
+              .map((s) => {
               const selected = lines.some((l) => l.serviceId === s.id);
               return (
                 <button
