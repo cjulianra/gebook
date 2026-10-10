@@ -8,7 +8,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
 
-  const [{ data: members }, { data: services }, { data: assignments }, { data: schedules }, { data: completedBookings }, { data: payouts }] =
+  const [{ data: members }, { data: services }, { data: assignments }, { data: dayBlocks }, { data: completedBookings }, { data: payouts }] =
     await Promise.all([
       supabase
         .from("business_members")
@@ -18,7 +18,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
         .order("created_at", { ascending: false }),
       supabase.from("services").select("id, name").eq("business_id", business.id).eq("is_active", true),
       supabase.from("employee_services").select("business_member_id, service_id"),
-      supabase.from("work_schedules").select("id, business_member_id, weekday, start_time, end_time"),
+      supabase.from("employee_day_blocks").select("id, business_member_id, block_date, reason"),
       supabase
         .from("bookings")
         .select("business_member_id, services(price)")
@@ -59,7 +59,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
       initialMembers={members ?? []}
       services={services ?? []}
       initialAssignments={assignments ?? []}
-      initialSchedules={schedules ?? []}
+      initialDayBlocks={dayBlocks ?? []}
       initialPayouts={payouts ?? []}
       earnedCommissions={Object.fromEntries(earnedCommissionByMember)}
     />

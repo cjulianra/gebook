@@ -401,7 +401,7 @@ function StepServicio({
                       {s.duration_minutes} min{s.category ? ` · ${s.category}` : ""}
                     </span>
                   </span>
-                  {showPrices && <span className="text-sm font-semibold text-[var(--color-ink-900)]">{currency.format(s.price)}</span>}
+                  {showPrices && <span className="text-sm font-semibold text-[var(--color-ink-900)]">Desde {currency.format(s.price)}</span>}
                 </button>
               );
             })}
@@ -563,7 +563,7 @@ function StepConfirmar({
           </div>
         </div>
 
-        <Row label="Servicio" value={showPrices ? `${service.name} · ${currency.format(service.price)}` : service.name} onEdit={() => onEdit(1)} />
+        <Row label="Servicio" value={showPrices ? `${service.name} · Desde ${currency.format(service.price)}` : service.name} onEdit={() => onEdit(1)} />
         <Row label="Profesional" value={employee.full_name} onEdit={() => onEdit(2)} />
         <Row
           label="Fecha y hora"

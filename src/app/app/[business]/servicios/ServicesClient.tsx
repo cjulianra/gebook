@@ -85,7 +85,7 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
                     {!service.is_active && <Badge tone="neutral">Inactivo</Badge>}
                   </div>
                   <p className="mt-0.5 text-sm text-[var(--color-ink-500)]">
-                    {currency.format(service.price)} · {service.duration_minutes} min
+                    Desde {currency.format(service.price)} · {service.duration_minutes} min
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

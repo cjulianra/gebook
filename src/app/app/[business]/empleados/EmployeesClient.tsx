@@ -15,7 +15,7 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { AccountPanel, currency, type Payout } from "@/components/employees/AccountModal";
-import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
+import { EmployeeDayBlocksPanel, type DayBlock } from "@/components/employees/EmployeeDayBlocksPanel";
 import { cn } from "@/lib/utils/cn";
 import { createEmployee, getInviteDetails, removeEmployee } from "./actions";
 
@@ -57,7 +57,7 @@ export function EmployeesClient({
   initialMembers,
   services,
   initialAssignments,
-  initialSchedules,
+  initialDayBlocks,
   initialPayouts,
   earnedCommissions,
 }: {
@@ -65,7 +65,7 @@ export function EmployeesClient({
   initialMembers: Member[];
   services: Service[];
   initialAssignments: Assignment[];
-  initialSchedules: Schedule[];
+  initialDayBlocks: DayBlock[];
   initialPayouts: Payout[];
   earnedCommissions: Record<string, number>;
 }) {
@@ -73,7 +73,7 @@ export function EmployeesClient({
   const refreshOnboarding = useOnboardingRefresh();
   const [members, setMembers] = useState(initialMembers);
   const [assignments, setAssignments] = useState(initialAssignments);
-  const [schedules, setSchedules] = useState(initialSchedules);
+  const [dayBlocks, setDayBlocks] = useState(initialDayBlocks);
   const [payouts, setPayouts] = useState(initialPayouts);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [configFor, setConfigFor] = useState<Member | null>(null);
@@ -242,7 +242,7 @@ export function EmployeesClient({
           businessId={businessId}
           services={services}
           assignedServiceIds={assignments.filter((a) => a.business_member_id === configFor.id).map((a) => a.service_id)}
-          schedules={schedules.filter((s) => s.business_member_id === configFor.id)}
+          dayBlocks={dayBlocks.filter((b) => b.business_member_id === configFor.id)}
           payouts={payouts.filter((p) => p.business_member_id === configFor.id)}
           earned={earnedCommissions[configFor.id] ?? 0}
           onClose={() => setConfigFor(null)}
@@ -253,9 +253,8 @@ export function EmployeesClient({
             ]);
             showToast("Servicios actualizados.");
           }}
-          onScheduleSaved={(saved) => {
-            setSchedules((prev) => [...prev.filter((s) => s.business_member_id !== configFor.id), ...saved]);
-            showToast("Horario actualizado.");
+          onDayBlocksChanged={(updated) => {
+            setDayBlocks((prev) => [...prev.filter((b) => b.business_member_id !== configFor.id), ...updated]);
           }}
           onCommissionSaved={(rate) => {
             setMembers((prev) =>
@@ -449,7 +448,7 @@ function InviteModal({
 const TABS = [
   { key: "foto", label: "Foto" },
   { key: "servicios", label: "Servicios" },
-  { key: "horario", label: "Horario" },
+  { key: "bloqueos", label: "Bloqueos" },
   { key: "comision", label: "Comisión" },
   { key: "permisos", label: "Permisos" },
   { key: "cuenta", label: "Liquidar" },
@@ -462,12 +461,12 @@ function EmployeeConfigModal({
   businessId,
   services,
   assignedServiceIds,
-  schedules,
+  dayBlocks,
   payouts,
   earned,
   onClose,
   onServicesSaved,
-  onScheduleSaved,
+  onDayBlocksChanged,
   onCommissionSaved,
   onPayoutRegistered,
   onPhotoSaved,
@@ -478,12 +477,12 @@ function EmployeeConfigModal({
   businessId: string;
   services: Service[];
   assignedServiceIds: string[];
-  schedules: Schedule[];
+  dayBlocks: DayBlock[];
   payouts: Payout[];
   earned: number;
   onClose: () => void;
   onServicesSaved: (serviceIds: string[]) => void;
-  onScheduleSaved: (schedules: Schedule[]) => void;
+  onDayBlocksChanged: (blocks: DayBlock[]) => void;
   onCommissionSaved: (rate: number) => void;
   onPayoutRegistered: (payout: Payout) => void;
   onPhotoSaved: (photoUrl: string) => void;
@@ -517,7 +516,7 @@ function EmployeeConfigModal({
         {tab === "servicios" && (
           <ServicesPanel member={member} services={services} assignedServiceIds={assignedServiceIds} onSaved={onServicesSaved} />
         )}
-        {tab === "horario" && <WeekSchedulePanel memberId={member.id} schedules={schedules} onSaved={onScheduleSaved} />}
+        {tab === "bloqueos" && <EmployeeDayBlocksPanel memberId={member.id} blocks={dayBlocks} onChange={onDayBlocksChanged} />}
         {tab === "comision" && <CommissionPanel member={member} onSaved={onCommissionSaved} />}
         {tab === "permisos" && <PermissionsPanel member={member} onSaved={onPermissionSaved} />}
         {tab === "cuenta" && (

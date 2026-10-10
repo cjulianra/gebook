@@ -5,7 +5,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { bogotaDateTime, weekdayOf } from "@/lib/utils/dateRange";
 
 const SLOT_STEP_MINUTES = 30;
-const DEFAULT_WINDOW = { start_time: "09:00", end_time: "19:00" };
 
 interface Interval {
   start: Date;
@@ -23,14 +22,28 @@ function timeToMinutes(hhmm: string) {
 
 async function computeFreeSlots(businessMemberId: string, day: string, durationMinutes: number) {
   const supabase = await createClient();
-  const weekday = weekdayOf(day);
 
-  const [{ data: schedules }, { data: busy }] = await Promise.all([
-    supabase.from("work_schedules").select("start_time, end_time").eq("business_member_id", businessMemberId).eq("weekday", weekday),
+  const { data: member } = await supabase.from("business_members").select("business_id").eq("id", businessMemberId).single();
+  if (!member) return [];
+
+  const [{ data: blocked }, { data: holiday }, { data: busy }] = await Promise.all([
+    supabase.from("employee_day_blocks").select("id").eq("business_member_id", businessMemberId).eq("block_date", day).maybeSingle(),
+    supabase.from("business_holidays").select("id").eq("business_id", member.business_id).eq("holiday_date", day).maybeSingle(),
     supabase.from("public_busy_slots").select("start_at, end_at").eq("business_member_id", businessMemberId),
   ]);
 
-  const windows = schedules && schedules.length > 0 ? schedules : [DEFAULT_WINDOW];
+  if (blocked) return [];
+
+  const weekday = weekdayOf(day);
+  const scheduleType = holiday ? "holiday" : weekday === 0 ? "sunday" : weekday === 6 ? "saturday" : "weekday";
+
+  const { data: schedules } = await supabase
+    .from("business_schedules")
+    .select("start_time, end_time")
+    .eq("business_id", member.business_id)
+    .eq("schedule_type", scheduleType);
+
+  const windows = schedules ?? [];
   const busyIntervals: Interval[] = (busy ?? []).map((b) => ({ start: new Date(b.start_at), end: new Date(b.end_at) }));
 
   const now = new Date();

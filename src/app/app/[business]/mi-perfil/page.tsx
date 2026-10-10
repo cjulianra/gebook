@@ -38,10 +38,12 @@ export default async function MiPerfilPage({ params }: { params: Promise<{ busin
   const profile = one(member.profiles);
   const details = one(member.employee_details);
 
-  const { data: schedules } = await supabase
-    .from("work_schedules")
-    .select("id, business_member_id, weekday, start_time, end_time")
-    .eq("business_member_id", member.id);
+  const { data: dayBlocks } = await supabase
+    .from("employee_day_blocks")
+    .select("id, business_member_id, block_date, reason")
+    .eq("business_member_id", member.id)
+    .gte("block_date", new Date().toISOString().slice(0, 10))
+    .order("block_date", { ascending: true });
 
   return (
     <MiPerfilClient
@@ -51,7 +53,7 @@ export default async function MiPerfilPage({ params }: { params: Promise<{ busin
       specialty={details?.specialty ?? null}
       photoUrl={details?.photo_url ?? null}
       commissionRate={details?.commission_rate ?? 40}
-      initialSchedules={schedules ?? []}
+      dayBlocks={dayBlocks ?? []}
     />
   );
 }

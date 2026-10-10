@@ -260,9 +260,7 @@ function NewBookingModal({
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [lines, setLines] = useState<{ serviceId: string; employeeId: string }[]>([
-    { serviceId: services[0]?.id ?? "", employeeId: lockedEmployeeId ?? "" },
-  ]);
+  const [lines, setLines] = useState<{ serviceId: string; employeeId: string }[]>([]);
   const [bookingDay, setBookingDay] = useState(day);
   const [time, setTime] = useState("");
   const [quickMode, setQuickMode] = useState(false);
@@ -411,6 +409,7 @@ function NewBookingModal({
     e.preventDefault();
     setError(null);
 
+    if (lines.length === 0) return setError("Selecciona al menos un servicio.");
     if (lines.some((l) => !l.serviceId)) return setError("Selecciona un servicio en cada línea.");
     if (!time) return setError("Elige el día y la hora.");
     for (const entry of schedule) {
@@ -421,7 +420,6 @@ function NewBookingModal({
     }
     if (clientMode === "existing" && !clientId) return setError("Selecciona un cliente.");
     if (clientMode === "new" && !newFirstName.trim()) return setError("Escribe el nombre del cliente.");
-    if (clientMode === "new" && !newPhone.trim()) return setError("Escribe el número de WhatsApp del cliente.");
 
     setLoading(true);
     const supabase = createClient();
@@ -504,7 +502,7 @@ function NewBookingModal({
     setNewFirstName("");
     setNewLastName("");
     setNewPhone("");
-    setLines([{ serviceId: services[0]?.id ?? "", employeeId: lockedEmployeeId ?? "" }]);
+    setLines([]);
     setTime("");
     setQuickMode(false);
   }
@@ -571,7 +569,7 @@ function NewBookingModal({
             <div className="grid grid-cols-2 gap-3">
               <Input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} placeholder="Nombre" />
               <Input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} placeholder="Apellido (opcional)" />
-              <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="Número de WhatsApp" className="col-span-2" />
+              <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="Número de WhatsApp (opcional)" className="col-span-2" />
             </div>
           )}
         </div>
@@ -607,7 +605,7 @@ function NewBookingModal({
                     <span className="truncate font-medium">{s.name}</span>
                   </span>
                   <span className="shrink-0 whitespace-nowrap text-xs opacity-80">
-                    {s.duration_minutes} min · {currency.format(s.price)}
+                    {s.duration_minutes} min · Desde {currency.format(s.price)}
                   </span>
                 </button>
               );

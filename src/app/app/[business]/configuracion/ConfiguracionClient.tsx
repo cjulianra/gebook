@@ -10,19 +10,39 @@ import { Input, Label, Select, FieldError } from "@/components/ui/Input";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { CITIES, NEIGHBORHOODS_BY_CITY } from "@/lib/data/santanderLocations";
 import { cn } from "@/lib/utils/cn";
+import { BusinessSchedulePanel, type BusinessSchedule } from "@/components/business/BusinessSchedulePanel";
+import { HolidaysPanel, type Holiday } from "@/components/business/HolidaysPanel";
 
 type Business = Database["public"]["Tables"]["businesses"]["Row"];
 
-export function ConfiguracionClient({ business }: { business: Business }) {
+export function ConfiguracionClient({
+  business,
+  initialSchedules,
+  initialHolidays,
+}: {
+  business: Business;
+  initialSchedules: BusinessSchedule[];
+  initialHolidays: Holiday[];
+}) {
   return (
     <ToastProvider>
-      <Inner business={business} />
+      <Inner business={business} initialSchedules={initialSchedules} initialHolidays={initialHolidays} />
     </ToastProvider>
   );
 }
 
-function Inner({ business }: { business: Business }) {
+function Inner({
+  business,
+  initialSchedules,
+  initialHolidays,
+}: {
+  business: Business;
+  initialSchedules: BusinessSchedule[];
+  initialHolidays: Holiday[];
+}) {
   const showToast = useToast();
+  const [schedules, setSchedules] = useState(initialSchedules);
+  const [holidays, setHolidays] = useState(initialHolidays);
   const [logoUrl, setLogoUrl] = useState(business.logo_url);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -178,6 +198,35 @@ function Inner({ business }: { business: Business }) {
               </span>
             </span>
           </label>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Horario de atención</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <p className="mb-4 text-sm text-[var(--color-ink-500)]">
+            Este horario aplica para todos los empleados del negocio. Para bloquear a un empleado puntual algún día, hazlo desde
+            Empleados.
+          </p>
+          <BusinessSchedulePanel
+            businessId={business.id}
+            schedules={schedules}
+            onSaved={(saved) => {
+              setSchedules(saved);
+              showToast("Horario actualizado.");
+            }}
+          />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Días festivos</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <HolidaysPanel businessId={business.id} holidays={holidays} onChange={setHolidays} />
         </CardBody>
       </Card>
 

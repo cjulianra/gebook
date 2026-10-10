@@ -8,8 +8,21 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { WeekSchedulePanel, type Schedule } from "@/components/employees/WeekSchedulePanel";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
+
+interface DayBlock {
+  id: string;
+  business_member_id: string;
+  block_date: string;
+  reason: string | null;
+}
+
+const WEEKDAY_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+function formatDate(dateStr: string) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return `${WEEKDAY_LABEL[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+}
 
 export function MiPerfilClient(props: {
   businessId: string;
@@ -18,7 +31,7 @@ export function MiPerfilClient(props: {
   specialty: string | null;
   photoUrl: string | null;
   commissionRate: number;
-  initialSchedules: Schedule[];
+  dayBlocks: DayBlock[];
 }) {
   return (
     <ToastProvider>
@@ -34,7 +47,7 @@ function Inner({
   specialty,
   photoUrl,
   commissionRate,
-  initialSchedules,
+  dayBlocks,
 }: {
   businessId: string;
   memberId: string;
@@ -42,13 +55,12 @@ function Inner({
   specialty: string | null;
   photoUrl: string | null;
   commissionRate: number;
-  initialSchedules: Schedule[];
+  dayBlocks: DayBlock[];
 }) {
   const router = useRouter();
   const showToast = useToast();
   const [photo, setPhoto] = useState(photoUrl);
   const [uploading, setUploading] = useState(false);
-  const [schedules, setSchedules] = useState(initialSchedules);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -133,20 +145,24 @@ function Inner({
 
       <Card>
         <CardHeader>
-          <CardTitle>Mi horario</CardTitle>
+          <CardTitle>Mis días bloqueados</CardTitle>
         </CardHeader>
         <CardBody>
           <p className="mb-4 text-sm text-[var(--color-ink-500)]">
-            Marca los días que trabajas y tu horario. Si un día no puedes venir, desmárcalo — no te llegarán reservas nuevas ese día.
+            El horario de atención lo define el negocio. Estos son los días en los que tu administrador te marcó como no disponible.
           </p>
-          <WeekSchedulePanel
-            memberId={memberId}
-            schedules={schedules}
-            onSaved={(saved) => {
-              setSchedules(saved);
-              showToast("Horario actualizado.");
-            }}
-          />
+          {dayBlocks.length === 0 ? (
+            <p className="text-sm text-[var(--color-ink-500)]">No tienes días bloqueados próximamente.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--color-border)] rounded-[var(--radius-md)] border border-[var(--color-border)]">
+              {dayBlocks.map((b) => (
+                <li key={b.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                  <span className="font-medium text-[var(--color-ink-900)]">{formatDate(b.block_date)}</span>
+                  {b.reason && <span className="text-[var(--color-ink-500)]">{b.reason}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </CardBody>
       </Card>
     </div>

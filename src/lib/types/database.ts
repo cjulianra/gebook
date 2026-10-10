@@ -79,6 +79,32 @@ type WorkScheduleRow = {
   end_time: string;
 }
 
+export type ScheduleType = "weekday" | "saturday" | "sunday" | "holiday";
+
+type BusinessScheduleRow = {
+  id: string;
+  business_id: string;
+  schedule_type: ScheduleType;
+  start_time: string;
+  end_time: string;
+}
+
+type BusinessHolidayRow = {
+  id: string;
+  business_id: string;
+  holiday_date: string;
+  name: string | null;
+  created_at: string;
+}
+
+type EmployeeDayBlockRow = {
+  id: string;
+  business_member_id: string;
+  block_date: string;
+  reason: string | null;
+  created_at: string;
+}
+
 type ClientRow = {
   id: string;
   business_id: string;
@@ -170,6 +196,24 @@ export interface Database {
         Row: WorkScheduleRow;
         Insert: Partial<WorkScheduleRow> & Pick<WorkScheduleRow, "business_member_id" | "weekday" | "start_time" | "end_time">;
         Update: Partial<WorkScheduleRow>;
+        Relationships: [];
+      };
+      business_schedules: {
+        Row: BusinessScheduleRow;
+        Insert: Partial<BusinessScheduleRow> & Pick<BusinessScheduleRow, "business_id" | "schedule_type" | "start_time" | "end_time">;
+        Update: Partial<BusinessScheduleRow>;
+        Relationships: [];
+      };
+      business_holidays: {
+        Row: BusinessHolidayRow;
+        Insert: Partial<BusinessHolidayRow> & Pick<BusinessHolidayRow, "business_id" | "holiday_date">;
+        Update: Partial<BusinessHolidayRow>;
+        Relationships: [];
+      };
+      employee_day_blocks: {
+        Row: EmployeeDayBlockRow;
+        Insert: Partial<EmployeeDayBlockRow> & Pick<EmployeeDayBlockRow, "business_member_id" | "block_date">;
+        Update: Partial<EmployeeDayBlockRow>;
         Relationships: [];
       };
       clients: {
