@@ -9,6 +9,9 @@ export default async function AppIndexPage() {
 
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase.from("profiles").select("is_super_admin").eq("id", user.id).single();
+  if (profile?.is_super_admin) redirect("/admin");
+
   const { data: memberships } = await supabase
     .from("business_members")
     .select("business_id, businesses(slug)")
