@@ -265,6 +265,7 @@ function NewBookingModal({
   ]);
   const [bookingDay, setBookingDay] = useState(day);
   const [time, setTime] = useState("");
+  const [quickMode, setQuickMode] = useState(false);
   const [slotsCache, setSlotsCache] = useState<Record<string, string[]>>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -414,7 +415,7 @@ function NewBookingModal({
     if (!time) return setError("Elige el día y la hora.");
     for (const entry of schedule) {
       if (!entry.employeeId) return setError(`Selecciona un empleado para ${entry.service?.name ?? "el servicio"}.`);
-      if (!isEmployeeAvailableAt(entry.serviceId, entry.employeeId, entry.start)) {
+      if (!quickMode && !isEmployeeAvailableAt(entry.serviceId, entry.employeeId, entry.start)) {
         return setError(`El empleado elegido para ${entry.service?.name ?? "el servicio"} ya no está disponible a esa hora.`);
       }
     }
@@ -464,7 +465,7 @@ function NewBookingModal({
           business_member_id: entry.employeeId,
           start_at: startAt.toISOString(),
           end_at: endAt.toISOString(),
-          status: "confirmed",
+          status: quickMode ? "completed" : "confirmed",
         })
         .select("id, start_at, end_at, status, notes, client_id, service_id, business_member_id")
         .single();
@@ -505,6 +506,7 @@ function NewBookingModal({
     setNewPhone("");
     setLines([{ serviceId: services[0]?.id ?? "", employeeId: lockedEmployeeId ?? "" }]);
     setTime("");
+    setQuickMode(false);
   }
 
   return (
@@ -623,10 +625,43 @@ function NewBookingModal({
           }} />
         </div>
 
+        {/* Registro rápido: permite registrar una reserva en un horario ya
+            pasado o fuera del horario de atención, para casos en que el
+            servicio ya ocurrió pero no se alcanzó a registrar a tiempo. */}
+        <div className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-[var(--color-ink-900)]">Registro rápido</p>
+            <p className="text-xs text-[var(--color-ink-500)]">
+              Permite elegir cualquier hora, aunque ya haya pasado o esté fuera del horario de atención. Útil cuando el servicio ya se hizo y no se registró a tiempo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setQuickMode((v) => !v);
+              setTime("");
+            }}
+            aria-pressed={quickMode}
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-[var(--radius-pill)] transition-colors",
+              quickMode ? "bg-[var(--color-ink-900)]" : "bg-[var(--color-border-strong)]"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform",
+                quickMode ? "translate-x-[22px]" : "translate-x-0.5"
+              )}
+            />
+          </button>
+        </div>
+
         {/* Hora */}
         <div>
           <Label>Hora</Label>
-          {loadingSlots ? (
+          {quickMode ? (
+            <Input type="time" value={time} onChange={(e) => selectTime(e.target.value)} />
+          ) : loadingSlots ? (
             <p className="text-sm text-[var(--color-ink-500)]">Buscando horarios…</p>
           ) : candidateTimes.length === 0 ? (
             <p className="text-sm text-[var(--color-ink-500)]">Nadie tiene horario disponible ese día para este servicio. Prueba otro día.</p>
@@ -680,7 +715,7 @@ function NewBookingModal({
                   <div className="space-y-1.5">
                     {eligibleEmployees.map((emp) => {
                       const name = one(emp.profiles)?.full_name ?? "";
-                      const isAvailable = isEmployeeAvailableAt(entry.serviceId, emp.id, entry.start);
+                      const isAvailable = quickMode || isEmployeeAvailableAt(entry.serviceId, emp.id, entry.start);
                       const selected = entry.employeeId === emp.id;
                       const disabled = !isAvailable;
                       return (
