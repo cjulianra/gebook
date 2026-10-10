@@ -20,12 +20,28 @@ async function sendPushToMembers(memberIds: string[], payload: PushPayload) {
   const { data: subs } = await admin.from("push_subscriptions").select("*").in("business_member_id", memberIds);
   if (!subs || subs.length === 0) return;
 
+  // El número en el globo rojo del ícono de la app debe reflejar las
+  // notificaciones SIN LEER de cada destinatario, no un contador global —
+  // por eso se calcula uno por miembro antes de enviarle su push.
+  const unreadByMember = new Map<string, number>();
+  await Promise.all(
+    memberIds.map(async (id) => {
+      const { count } = await admin
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("business_member_id", id)
+        .is("read_at", null);
+      unreadByMember.set(id, count ?? 0);
+    })
+  );
+
   await Promise.allSettled(
     subs.map(async (sub) => {
       try {
+        const badgeCount = unreadByMember.get(sub.business_member_id) ?? undefined;
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(payload)
+          JSON.stringify({ ...payload, badgeCount })
         );
       } catch (err) {
         const statusCode = (err as { statusCode?: number }).statusCode;

@@ -19,6 +19,15 @@ self.addEventListener("push", (event) => {
     payload = { title: "Gebook", body: event.data.text() };
   }
 
+  // El numerito rojo sobre el ícono de la app (Badging API) — Android y, desde
+  // iOS 16.4+, también iOS cuando la app está instalada. Se actualiza aquí
+  // porque el push puede llegar con la app cerrada, sin ninguna pestaña
+  // abierta donde correr este código.
+  if (typeof payload.badgeCount === "number" && self.navigator && "setAppBadge" in self.navigator) {
+    if (payload.badgeCount > 0) self.navigator.setAppBadge(payload.badgeCount).catch(() => {});
+    else self.navigator.clearAppBadge().catch(() => {});
+  }
+
   event.waitUntil(
     self.registration.showNotification(payload.title || "Gebook", {
       body: payload.body || "",

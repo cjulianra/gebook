@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 import { PushNotificationsPrompt } from "@/components/pwa/PushNotificationsPrompt";
+import { AppBadgeSync } from "@/components/pwa/AppBadgeSync";
 
 // En mobile solo caben unos pocos tabs abajo; el resto vive detrás del menú hamburguesa.
 const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes", "mis-reportes", "mi-perfil"];
@@ -144,6 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         noPrefetch={noPrefetch}
       />
 
+      <AppBadgeSync memberId={membership.id} />
       {!onboardingStep && <PushNotificationsPrompt memberId={membership.id} />}
     </div>
   );
