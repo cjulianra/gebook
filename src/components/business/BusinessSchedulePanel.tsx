@@ -80,12 +80,12 @@ export function BusinessSchedulePanel({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
+      <div className="space-y-4">
         {rows.map((row) => {
           const tier = TIERS.find((t) => t.type === row.type)!;
           return (
-            <div key={row.type} className="flex flex-wrap items-center gap-3">
-              <label className="flex w-36 shrink-0 items-center gap-2">
+            <div key={row.type} className="space-y-2">
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={row.enabled}
@@ -94,21 +94,23 @@ export function BusinessSchedulePanel({
                 />
                 <span className="text-sm text-[var(--color-ink-900)]">{tier.label}</span>
               </label>
-              <input
-                type="time"
-                value={row.start}
-                disabled={!row.enabled}
-                onChange={(e) => updateRow(row.type, { start: e.target.value })}
-                className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
-              />
-              <span className="text-[var(--color-ink-400)]">–</span>
-              <input
-                type="time"
-                value={row.end}
-                disabled={!row.enabled}
-                onChange={(e) => updateRow(row.type, { end: e.target.value })}
-                className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="time"
+                  value={row.start}
+                  disabled={!row.enabled}
+                  onChange={(e) => updateRow(row.type, { start: e.target.value })}
+                  className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
+                />
+                <span className="text-[var(--color-ink-400)]">–</span>
+                <input
+                  type="time"
+                  value={row.end}
+                  disabled={!row.enabled}
+                  onChange={(e) => updateRow(row.type, { end: e.target.value })}
+                  className="h-9 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm disabled:opacity-40"
+                />
+              </div>
             </div>
           );
         })}
