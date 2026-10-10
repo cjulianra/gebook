@@ -8,6 +8,7 @@ import { NAV_ITEMS } from "./nav-items";
 import { NavIcon } from "./icons";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { Avatar } from "@/components/ui/Avatar";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 import { PushNotificationsPrompt } from "@/components/pwa/PushNotificationsPrompt";
@@ -101,6 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <BusinessMark name={business.name} logoUrl={business.logo_url} size={44} fill />
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBell className="rounded-full bg-[var(--color-surface)]/80 shadow-[var(--shadow-sm)]" />
           <button
             onClick={() => setMoreOpen((v) => !v)}
             aria-label="Abrir menú"
