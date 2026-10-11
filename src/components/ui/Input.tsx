@@ -77,11 +77,8 @@ export const SearchInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTML
       <input
         ref={ref}
         type="search"
-        className={cn(
-          fieldBase,
-          "h-12 bg-[var(--color-canvas)] pl-11 font-medium placeholder:font-normal focus:bg-[var(--color-surface)]",
-          className
-        )}
+        style={{ backgroundColor: "var(--color-canvas)" }}
+        className={cn(fieldBase, "h-12 pl-11 font-medium placeholder:font-normal", className)}
         {...props}
       />
     </div>

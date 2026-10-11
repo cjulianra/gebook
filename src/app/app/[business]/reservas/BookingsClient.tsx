@@ -530,6 +530,27 @@ function NewBookingModal({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Registro rápido: permite registrar una reserva en un horario ya
+            pasado o fuera del horario de atención, para casos en que el
+            servicio ya ocurrió pero no se alcanzó a registrar a tiempo. */}
+        <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] px-4 py-3">
+          <input
+            type="checkbox"
+            checked={quickMode}
+            onChange={(e) => {
+              setQuickMode(e.target.checked);
+              setTime(e.target.checked ? nowInBogota() : "");
+            }}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+          />
+          <span>
+            <span className="block text-sm font-medium text-[var(--color-ink-900)]">Registro rápido</span>
+            <span className="block text-xs text-[var(--color-ink-500)]">
+              Se registra con la hora de ahora mismo y puedes elegir directamente el empleado, sin esperar a ver disponibilidad.
+            </span>
+          </span>
+        </label>
+
         {/* Cliente */}
         <div>
           <Label>Cliente</Label>
@@ -637,27 +658,6 @@ function NewBookingModal({
             selectDay(d.toISOString().slice(0, 10));
           }} />
         </div>
-
-        {/* Registro rápido: permite registrar una reserva en un horario ya
-            pasado o fuera del horario de atención, para casos en que el
-            servicio ya ocurrió pero no se alcanzó a registrar a tiempo. */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] px-4 py-3">
-          <input
-            type="checkbox"
-            checked={quickMode}
-            onChange={(e) => {
-              setQuickMode(e.target.checked);
-              setTime(e.target.checked ? nowInBogota() : "");
-            }}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
-          />
-          <span>
-            <span className="block text-sm font-medium text-[var(--color-ink-900)]">Registro rápido</span>
-            <span className="block text-xs text-[var(--color-ink-500)]">
-              Se registra con la hora de ahora mismo y puedes elegir directamente el empleado, sin esperar a ver disponibilidad.
-            </span>
-          </span>
-        </label>
 
         {/* Hora: en Registro rápido se usa la hora actual automáticamente y
             este bloque no se muestra — se pasa directo a elegir empleado. */}
