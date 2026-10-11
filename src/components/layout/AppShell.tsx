@@ -126,7 +126,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               href={href}
               prefetch={noPrefetch ? false : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius-pill)] py-2 text-[10px] font-medium transition-colors",
+                "flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius-pill)] py-2 text-xs font-medium transition-colors",
                 active ? "bg-[var(--color-ink-900)] text-white" : "text-[var(--color-ink-500)]"
               )}
             >
