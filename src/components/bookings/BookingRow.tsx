@@ -20,10 +20,12 @@ export function BookingRow({
   booking,
   onEdit,
   onCancel,
+  onAddExtra,
 }: {
   booking: Booking;
   onEdit: (booking: Booking) => void;
   onCancel: (booking: Booking) => void;
+  onAddExtra: (booking: Booking) => void;
 }) {
   const { business, membership } = useBusiness();
   const canContactClient = membership.role !== "employee" || membership.canViewClients;
@@ -103,7 +105,26 @@ export function BookingRow({
         ) : (
           <BookingStatusBadge status={booking.status} />
         )}
+        {booking.status !== "cancelled" && (
+          <button
+            type="button"
+            onClick={() => onAddExtra(booking)}
+            aria-label="Agregar servicio extra"
+            title="Agregar servicio extra"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+          >
+            <PlusIcon className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </div>
+  );
+}
+
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
   );
 }

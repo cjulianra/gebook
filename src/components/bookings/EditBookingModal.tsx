@@ -174,7 +174,6 @@ export function EditBookingModal({
         </div>
 
         <div>
-          <Label>Día</Label>
           <WeekStrip
             day={bookingDay}
             onSelect={selectDay}

@@ -20,6 +20,7 @@ import { getAvailableSlots } from "@/app/[slug]/actions";
 import { notifyBookingCreated } from "./actions";
 import { BookingRow } from "@/components/bookings/BookingRow";
 import { EditBookingModal } from "@/components/bookings/EditBookingModal";
+import { AddExtraServiceModal } from "@/components/bookings/AddExtraServiceModal";
 import {
   type Assignment,
   type Booking,
@@ -69,6 +70,7 @@ export function BookingsClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [toCancel, setToCancel] = useState<Booking | null>(null);
   const [toEdit, setToEdit] = useState<Booking | null>(null);
+  const [toAddExtra, setToAddExtra] = useState<Booking | null>(null);
   const showToast = useToast();
 
   function goToDay(newDay: string) {
@@ -144,6 +146,7 @@ export function BookingsClient({
                 booking={booking}
                 onEdit={setToEdit}
                 onCancel={setToCancel}
+                onAddExtra={setToAddExtra}
               />
             ))}
           </div>
@@ -179,6 +182,27 @@ export function BookingsClient({
           setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)).sort((a, b) => a.start_at.localeCompare(b.start_at)));
           setToEdit(null);
           showToast("Reserva actualizada.");
+        }}
+      />
+
+      <AddExtraServiceModal
+        booking={toAddExtra}
+        onClose={() => setToAddExtra(null)}
+        businessId={businessId}
+        services={services}
+        employees={employees}
+        assignments={assignments}
+        lockedEmployeeId={isEmployee ? membership.id : undefined}
+        onCreated={(created) => {
+          setBookings((prev) => [...prev, created].sort((a, b) => a.start_at.localeCompare(b.start_at)));
+          setToAddExtra(null);
+          showToast("Servicio extra agregado.");
+          if (created.business_member_id !== membership.id) {
+            const client = one(created.clients);
+            const service = one(created.services);
+            const clientName = client ? `${client.first_name} ${client.last_name ?? ""}`.trim() : "un cliente";
+            notifyBookingCreated(businessId, [created.business_member_id], "Servicio extra agregado", `${clientName}: ${service?.name ?? "un servicio"}.`).catch(() => {});
+          }
         }}
       />
 

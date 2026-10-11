@@ -7,14 +7,17 @@ import { useToast } from "@/components/ui/Toast";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { BookingRow } from "@/components/bookings/BookingRow";
 import { EditBookingModal } from "@/components/bookings/EditBookingModal";
+import { AddExtraServiceModal } from "@/components/bookings/AddExtraServiceModal";
 import { ConfirmDialog } from "@/components/ui/Modal";
-import { type Assignment, type Booking, type Employee, type Service } from "@/components/bookings/types";
+import { notifyBookingCreated } from "../reservas/actions";
+import { type Assignment, type Booking, type Employee, type Service, one } from "@/components/bookings/types";
 
 /** Misma fila y mismas acciones (Editar, Cancelar) que la Agenda, para la lista "Agenda de hoy" del Panel. */
 export function TodayAgendaClient({
   businessId,
   initialBookings,
   employees,
+  services,
   assignments,
 }: {
   businessId: string;
@@ -28,6 +31,7 @@ export function TodayAgendaClient({
   const [bookings, setBookings] = useState(initialBookings);
   const [toCancel, setToCancel] = useState<Booking | null>(null);
   const [toEdit, setToEdit] = useState<Booking | null>(null);
+  const [toAddExtra, setToAddExtra] = useState<Booking | null>(null);
   const showToast = useToast();
 
   async function handleCancel() {
@@ -55,6 +59,7 @@ export function TodayAgendaClient({
             booking={booking}
             onEdit={setToEdit}
             onCancel={setToCancel}
+            onAddExtra={setToAddExtra}
           />
         ))}
       </div>
@@ -70,6 +75,27 @@ export function TodayAgendaClient({
           setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)).sort((a, b) => a.start_at.localeCompare(b.start_at)));
           setToEdit(null);
           showToast("Reserva actualizada.");
+        }}
+      />
+
+      <AddExtraServiceModal
+        booking={toAddExtra}
+        onClose={() => setToAddExtra(null)}
+        businessId={businessId}
+        services={services}
+        employees={employees}
+        assignments={assignments}
+        lockedEmployeeId={isEmployee ? membership.id : undefined}
+        onCreated={(created) => {
+          setBookings((prev) => [...prev, created].sort((a, b) => a.start_at.localeCompare(b.start_at)));
+          setToAddExtra(null);
+          showToast("Servicio extra agregado.");
+          if (created.business_member_id !== membership.id) {
+            const client = one(created.clients);
+            const service = one(created.services);
+            const clientName = client ? `${client.first_name} ${client.last_name ?? ""}`.trim() : "un cliente";
+            notifyBookingCreated(businessId, [created.business_member_id], "Servicio extra agregado", `${clientName}: ${service?.name ?? "un servicio"}.`).catch(() => {});
+          }
         }}
       />
 
