@@ -424,8 +424,10 @@ function NewBookingModal({
         return setError(`El empleado elegido para ${entry.service?.name ?? "el servicio"} ya no está disponible a esa hora.`);
       }
     }
-    if (clientMode === "existing" && !clientId) return setError("Selecciona un cliente.");
-    if (clientMode === "new" && !newFirstName.trim()) return setError("Escribe el nombre del cliente.");
+    if (!quickMode) {
+      if (clientMode === "existing" && !clientId) return setError("Selecciona un cliente.");
+      if (clientMode === "new" && !newFirstName.trim()) return setError("Escribe el nombre del cliente.");
+    }
 
     setLoading(true);
     const supabase = createClient();
@@ -433,7 +435,7 @@ function NewBookingModal({
     let finalClientId = clientId;
     let clientRecord = clients.find((c) => c.id === clientId) ?? null;
 
-    if (clientMode === "new") {
+    if (clientMode === "new" && newFirstName.trim()) {
       const { data: createdClient, error: clientError } = await supabase
         .from("clients")
         .insert({
@@ -453,6 +455,34 @@ function NewBookingModal({
       finalClientId = createdClient.id;
       clientRecord = createdClient;
       onClientCreated(createdClient);
+    } else if (!finalClientId) {
+      // Registro rápido sin cliente elegido: se usa (o se crea) un registro
+      // genérico del negocio, ya que la reserva siempre necesita un cliente.
+      const { data: placeholder } = await supabase
+        .from("clients")
+        .select()
+        .eq("business_id", businessId)
+        .eq("first_name", "Cliente sin registrar")
+        .maybeSingle();
+
+      if (placeholder) {
+        finalClientId = placeholder.id;
+        clientRecord = placeholder;
+      } else {
+        const { data: createdPlaceholder, error: placeholderError } = await supabase
+          .from("clients")
+          .insert({ business_id: businessId, first_name: "Cliente sin registrar" })
+          .select()
+          .single();
+        if (placeholderError || !createdPlaceholder) {
+          setLoading(false);
+          setError("No pudimos registrar la reserva.");
+          return;
+        }
+        finalClientId = createdPlaceholder.id;
+        clientRecord = createdPlaceholder;
+        onClientCreated(createdPlaceholder);
+      }
     }
 
     const employeeSummary = new Map<string, string[]>();
@@ -546,14 +576,14 @@ function NewBookingModal({
           <span>
             <span className="block text-sm font-medium text-[var(--color-ink-900)]">Registro rápido</span>
             <span className="block text-xs text-[var(--color-ink-500)]">
-              Márcalo para elegir cualquier hora, aunque ya haya pasado o esté fuera del horario de atención. Úsalo cuando el servicio ya ocurrió y no se registró a tiempo.
+              Úsalo cuando el registro ya pasó y no se registró a tiempo.
             </span>
           </span>
         </label>
 
         {/* Cliente */}
         <div>
-          <Label>Cliente</Label>
+          <Label>Cliente{quickMode && <span className="font-normal text-[var(--color-ink-400)]"> (opcional)</span>}</Label>
           <div className="mb-2 flex gap-1 rounded-[var(--radius-pill)] bg-[var(--color-canvas)] p-1">
             <button
               type="button"
