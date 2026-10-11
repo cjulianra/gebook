@@ -14,6 +14,19 @@ interface PushPayload {
   link?: string;
 }
 
+/**
+ * Las rutas del panel viven bajo /app/[slug]/... — un link relativo como
+ * "/reservas" no es una ruta real y produce 404 al hacer clic en la
+ * notificación (push o campanita). Esto arma la ruta completa a partir del
+ * business_id, que es lo único que suelen tener a mano los server actions.
+ */
+export async function appLink(businessId: string, path: string): Promise<string> {
+  const admin = createAdminClient();
+  const { data: business } = await admin.from("businesses").select("slug").eq("id", businessId).maybeSingle();
+  if (!business) return "/app";
+  return `/app/${business.slug}${path}`;
+}
+
 async function sendPushToMembers(memberIds: string[], payload: PushPayload) {
   if (memberIds.length === 0) return;
   const admin = createAdminClient();
@@ -81,15 +94,18 @@ export async function notifyNewBooking(
   );
   if (recipientIds.length === 0) return;
 
+  const resolvedLink = payload.link ? await appLink(businessId, payload.link) : null;
+  const resolvedPayload = { ...payload, link: resolvedLink ?? undefined };
+
   await admin.from("notifications").insert(
     recipientIds.map((id) => ({
       business_id: businessId,
       business_member_id: id,
       title: payload.title,
       body: payload.body,
-      link: payload.link ?? null,
+      link: resolvedLink,
     }))
   );
 
-  await sendPushToMembers(recipientIds, payload);
+  await sendPushToMembers(recipientIds, resolvedPayload);
 }

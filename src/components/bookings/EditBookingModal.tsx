@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useBusiness } from "@/lib/context/BusinessContext";
 import { Button } from "@/components/ui/Button";
 import { Label, FieldError } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
@@ -30,6 +31,7 @@ export function EditBookingModal({
   lockedEmployeeId?: string;
   onSaved: (booking: Pick<Booking, "id" | "start_at" | "end_at" | "business_member_id" | "business_members">) => void;
 }) {
+  const { business } = useBusiness();
   const service = one(booking?.services);
   const [bookingDay, setBookingDay] = useState(booking ? booking.start_at.slice(0, 10) : "");
   const [time, setTime] = useState(booking ? booking.start_at.slice(11, 16) : "");
@@ -141,7 +143,7 @@ export function EditBookingModal({
         business_member_id: employeeId,
         title: "Reserva reprogramada",
         body: `${service.name} con ${clientName} ahora es el ${bookingDay} a las ${formatTime12h(time)}.`,
-        link: "/reservas",
+        link: `/app/${business.slug}/reservas`,
       });
     }
   }

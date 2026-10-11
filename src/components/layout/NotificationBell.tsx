@@ -74,9 +74,20 @@ export function NotificationBell({ className }: { className?: string }) {
     }
   }
 
-  function handleClickItem(n: Notification) {
+  async function handleClickItem(n: Notification) {
     setOpen(false);
-    if (n.link) router.push(`/app/${business.slug}${n.link}`);
+    // Al hacer clic la notificación desaparece de la lista — así no se van
+    // acumulando una vez que el usuario ya las revisó.
+    setItems((prev) => prev.filter((item) => item.id !== n.id));
+    const supabase = createClient();
+    await supabase.from("notifications").delete().eq("id", n.id);
+
+    if (n.link) {
+      // Las notificaciones viejas pueden tener un link relativo tipo
+      // "/reservas" (bug ya corregido); las nuevas ya vienen completas
+      // como "/app/slug/reservas" — soportar ambas evita un 404 doble-prefijado.
+      router.push(n.link.startsWith("/app/") ? n.link : `/app/${business.slug}${n.link}`);
+    }
   }
 
   return (

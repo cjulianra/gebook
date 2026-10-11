@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notifyNewBooking } from "@/lib/push/send";
+import { appLink, notifyNewBooking } from "@/lib/push/send";
 
 async function getMembership(businessId: string) {
   const supabase = await createClient();
@@ -106,7 +106,7 @@ export async function editNotebookEntry(
       business_member_id: updated.business_member_id,
       title: "Anotación del cuaderno editada",
       body: `${entry.serviceName} fue actualizada por el dueño/admin.`,
-      link: "/cuaderno",
+      link: await appLink(businessId, "/cuaderno"),
     });
   } catch {
     // La actualización ya quedó guardada; si falla la notificación no bloquea el flujo.
@@ -145,7 +145,7 @@ export async function reviewNotebookEntry(businessId: string, entryId: string, a
       business_member_id: updated.business_member_id,
       title: approve ? "Anotación aprobada" : "Anotación rechazada",
       body: `${updated.service_name}: ${approve ? "aprobada, ya cuenta en tu contabilidad." : "fue rechazada."}`,
-      link: "/cuaderno",
+      link: await appLink(businessId, "/cuaderno"),
     });
   } catch {
     // La actualización ya quedó guardada; si falla la notificación no bloquea el flujo.
