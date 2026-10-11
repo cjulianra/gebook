@@ -389,7 +389,7 @@ function NewBookingModal({
       // mantener el orden del catálogo para que el encadenado de horarios sea predecible
       return services.filter((s) => next.some((l) => l.serviceId === s.id)).map((s) => next.find((l) => l.serviceId === s.id)!);
     });
-    setTime("");
+    setTime(quickMode ? nowInBogota() : "");
   }
 
   function updateLineEmployee(serviceId: string, employeeId: string) {
@@ -399,7 +399,7 @@ function NewBookingModal({
   function selectDay(d: string) {
     setBookingDay(d);
     setLines((prev) => prev.map((l) => ({ ...l, employeeId: lockedEmployeeId ?? "" })));
-    setTime("");
+    setTime(quickMode ? nowInBogota() : "");
   }
 
   function selectTime(t: string) {
