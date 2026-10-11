@@ -24,7 +24,7 @@ export default async function CuadernoPage({ params }: { params: Promise<{ busin
 
   const isAdmin = membership.role === "owner" || membership.role === "admin";
 
-  const [{ data: services }, { data: entries }] = await Promise.all([
+  const [{ data: services }, { data: entries }, { data: employees }] = await Promise.all([
     supabase.from("services").select("id, name, price").eq("business_id", business.id).eq("is_active", true).order("name"),
     isAdmin
       ? supabase
@@ -40,7 +40,20 @@ export default async function CuadernoPage({ params }: { params: Promise<{ busin
           .eq("business_id", business.id)
           .eq("business_member_id", membership.id)
           .order("created_at", { ascending: false }),
+    isAdmin
+      ? supabase
+          .from("business_members")
+          .select("id, profiles(full_name)")
+          .eq("business_id", business.id)
+          .in("role", ["employee", "admin"])
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: null }),
   ]);
+
+  const employeeOptions = ((employees ?? []) as unknown as { id: string; profiles: { full_name: string } | { full_name: string }[] | null }[]).map((m) => ({
+    id: m.id,
+    name: Array.isArray(m.profiles) ? m.profiles[0]?.full_name : m.profiles?.full_name,
+  }));
 
   return (
     <CuadernoClient
@@ -48,6 +61,7 @@ export default async function CuadernoPage({ params }: { params: Promise<{ busin
       memberId={membership.id}
       isAdmin={isAdmin}
       services={services ?? []}
+      employees={employeeOptions}
       initialEntries={(entries ?? []) as unknown as Entry[]}
     />
   );

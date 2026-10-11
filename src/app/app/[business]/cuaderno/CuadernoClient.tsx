@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -68,21 +68,32 @@ function employeeOf(entry: Entry) {
   return { name: profile?.full_name, photoUrl: details?.photo_url ?? null };
 }
 
+interface EmployeeOption {
+  id: string;
+  name: string | undefined;
+}
+
 export function CuadernoClient({
   businessId,
   isAdmin,
   services,
+  employees,
   initialEntries,
 }: {
   businessId: string;
   memberId: string;
   isAdmin: boolean;
   services: Service[];
+  employees: EmployeeOption[];
   initialEntries: Entry[];
 }) {
   const [entries, setEntries] = useState(initialEntries);
   const [open, setOpen] = useState(false);
   const [toEdit, setToEdit] = useState<Entry | null>(null);
+  const [employeeFilter, setEmployeeFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [dayFilter, setDayFilter] = useState("");
   const showToast = useToast();
 
   async function handleReview(entry: Entry, approve: boolean) {
@@ -106,8 +117,20 @@ export function CuadernoClient({
     showToast("Anotación borrada.");
   }
 
-  const pending = entries.filter((e) => e.status === "pending");
-  const reviewed = entries.filter((e) => e.status !== "pending");
+  const filteredEntries = useMemo(() => {
+    return entries.filter((e) => {
+      if (isAdmin && employeeFilter && e.business_member_id !== employeeFilter) return false;
+      if (isAdmin) {
+        if (dateFrom && e.performed_at < dateFrom) return false;
+        if (dateTo && e.performed_at > dateTo) return false;
+      } else if (dayFilter && e.performed_at !== dayFilter) return false;
+      return true;
+    });
+  }, [entries, isAdmin, employeeFilter, dateFrom, dateTo, dayFilter]);
+
+  const pending = filteredEntries.filter((e) => e.status === "pending");
+  const reviewed = filteredEntries.filter((e) => e.status !== "pending");
+  const hasFilters = isAdmin ? !!(employeeFilter || dateFrom || dateTo) : !!dayFilter;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
@@ -121,10 +144,61 @@ export function CuadernoClient({
         action={!isAdmin && <Button onClick={() => setOpen(true)}>Nueva anotación</Button>}
       />
 
-      {entries.length === 0 ? (
+      <Card className="flex flex-wrap items-end gap-3 p-4">
+        {isAdmin ? (
+          <>
+            <div className="min-w-[10rem] flex-1">
+              <Label>Empleado</Label>
+              <Select value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
+                <option value="">Todos los empleados</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name ?? "Sin nombre"}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Desde</Label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            </div>
+            <div>
+              <Label>Hasta</Label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+          </>
+        ) : (
+          <div>
+            <Label>Ver un día</Label>
+            <Input type="date" value={dayFilter} onChange={(e) => setDayFilter(e.target.value)} />
+          </div>
+        )}
+        {hasFilters && (
+          <Button
+            size="sm"
+            variant="neutral-soft"
+            onClick={() => {
+              setEmployeeFilter("");
+              setDateFrom("");
+              setDateTo("");
+              setDayFilter("");
+            }}
+          >
+            Quitar filtros
+          </Button>
+        )}
+      </Card>
+
+      {filteredEntries.length === 0 ? (
         <EmptyState
           title="Sin anotaciones"
-          description={isAdmin ? "Cuando un empleado anote un servicio, aparecerá aquí para tu revisión." : "Registra un servicio que no quedó en la agenda."}
+          description={
+            hasFilters
+              ? "Ninguna anotación coincide con el filtro."
+              : isAdmin
+                ? "Cuando un empleado anote un servicio, aparecerá aquí para tu revisión."
+                : "Registra un servicio que no quedó en la agenda."
+          }
         />
       ) : (
         <div className="space-y-5">
