@@ -18,10 +18,13 @@ export function WeekStrip({
   day,
   onSelect,
   onShiftWeek,
+  highlightSelected = true,
 }: {
   day: string;
   onSelect: (day: string) => void;
   onShiftWeek: (direction: -1 | 1) => void;
+  /** Si no hay un día realmente elegido (ej. un filtro todavía sin activar), pasar false para no marcar `day` como seleccionado — solo se resalta "hoy". */
+  highlightSelected?: boolean;
 }) {
   const selected = new Date(`${day}T00:00:00`);
   const start = new Date(selected);
@@ -62,7 +65,7 @@ export function WeekStrip({
       <div className="grid grid-cols-7 gap-2">
         {days.map((d) => {
           const key = toKey(d);
-          const isSelected = key === day;
+          const isSelected = highlightSelected && key === day;
           const isToday = key === todayKey;
           return (
             <button

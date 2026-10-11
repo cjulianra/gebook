@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
+import { WeekStrip } from "@/components/ui/WeekStrip";
 import { BOGOTA_TZ } from "@/lib/utils/dateRange";
 import { cn } from "@/lib/utils/cn";
 import { createNotebookEntry, deleteNotebookEntry, editNotebookEntry, reviewNotebookEntry } from "./actions";
@@ -91,9 +92,7 @@ export function CuadernoClient({
   const [open, setOpen] = useState(false);
   const [toEdit, setToEdit] = useState<Entry | null>(null);
   const [employeeFilter, setEmployeeFilter] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [dayFilter, setDayFilter] = useState("");
+  const [dayFilter, setDayFilter] = useState<string | null>(null);
   const showToast = useToast();
 
   async function handleReview(entry: Entry, approve: boolean) {
@@ -120,17 +119,22 @@ export function CuadernoClient({
   const filteredEntries = useMemo(() => {
     return entries.filter((e) => {
       if (isAdmin && employeeFilter && e.business_member_id !== employeeFilter) return false;
-      if (isAdmin) {
-        if (dateFrom && e.performed_at < dateFrom) return false;
-        if (dateTo && e.performed_at > dateTo) return false;
-      } else if (dayFilter && e.performed_at !== dayFilter) return false;
+      if (dayFilter && e.performed_at !== dayFilter) return false;
       return true;
     });
-  }, [entries, isAdmin, employeeFilter, dateFrom, dateTo, dayFilter]);
+  }, [entries, isAdmin, employeeFilter, dayFilter]);
 
   const pending = filteredEntries.filter((e) => e.status === "pending");
   const reviewed = filteredEntries.filter((e) => e.status !== "pending");
-  const hasFilters = isAdmin ? !!(employeeFilter || dateFrom || dateTo) : !!dayFilter;
+  const hasFilters = isAdmin ? !!(employeeFilter || dayFilter) : !!dayFilter;
+  const hasDayFilter = !!dayFilter;
+  const weekAnchor = dayFilter ?? todayBogota();
+
+  function shiftWeek(direction: -1 | 1) {
+    const d = new Date(`${weekAnchor}T00:00:00`);
+    d.setDate(d.getDate() + direction * 7);
+    setDayFilter(d.toISOString().slice(0, 10));
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
@@ -144,9 +148,9 @@ export function CuadernoClient({
         action={!isAdmin && <Button onClick={() => setOpen(true)}>Nueva anotación</Button>}
       />
 
-      <Card className="flex flex-wrap items-end gap-3 p-4">
-        {isAdmin ? (
-          <>
+      <div className="space-y-3">
+        {isAdmin && (
+          <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[10rem] flex-1">
               <Label>Empleado</Label>
               <Select value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
@@ -158,36 +162,17 @@ export function CuadernoClient({
                 ))}
               </Select>
             </div>
-            <div>
-              <Label>Desde</Label>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-            </div>
-            <div>
-              <Label>Hasta</Label>
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-            </div>
-          </>
-        ) : (
-          <div>
-            <Label>Ver un día</Label>
-            <Input type="date" value={dayFilter} onChange={(e) => setDayFilter(e.target.value)} />
           </div>
         )}
-        {hasFilters && (
-          <Button
-            size="sm"
-            variant="neutral-soft"
-            onClick={() => {
-              setEmployeeFilter("");
-              setDateFrom("");
-              setDateTo("");
-              setDayFilter("");
-            }}
-          >
-            Quitar filtros
+
+        <WeekStrip day={weekAnchor} onSelect={setDayFilter} onShiftWeek={shiftWeek} highlightSelected={hasDayFilter} />
+
+        {hasDayFilter && (
+          <Button size="sm" variant="neutral-soft" onClick={() => setDayFilter(null)}>
+            Ver todos los días
           </Button>
         )}
-      </Card>
+      </div>
 
       {filteredEntries.length === 0 ? (
         <EmptyState
