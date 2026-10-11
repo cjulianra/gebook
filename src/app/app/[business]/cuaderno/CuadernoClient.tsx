@@ -124,8 +124,21 @@ export function CuadernoClient({
     });
   }, [entries, isAdmin, employeeFilter, dayFilter]);
 
-  const pending = filteredEntries.filter((e) => e.status === "pending");
-  const reviewed = filteredEntries.filter((e) => e.status !== "pending");
+  const dayGroups = useMemo(() => {
+    const byDay = new Map<string, Entry[]>();
+    for (const entry of filteredEntries) {
+      const list = byDay.get(entry.performed_at) ?? [];
+      list.push(entry);
+      byDay.set(entry.performed_at, list);
+    }
+    return Array.from(byDay.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, dayEntries]) => ({
+        date,
+        entries: [...dayEntries].sort((a, b) => (a.status === "pending" ? -1 : 1) - (b.status === "pending" ? -1 : 1)),
+        total: dayEntries.reduce((sum, e) => sum + e.amount, 0),
+      }));
+  }, [filteredEntries]);
   const hasFilters = isAdmin ? !!(employeeFilter || dayFilter) : !!dayFilter;
   const hasDayFilter = !!dayFilter;
   const weekAnchor = dayFilter ?? todayBogota();
@@ -187,20 +200,21 @@ export function CuadernoClient({
         />
       ) : (
         <div className="space-y-5">
-          {pending.length > 0 && (
-            <Card className="divide-y divide-[var(--color-border)] p-0">
-              {pending.map((entry) => (
-                <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} onEdit={setToEdit} />
-              ))}
+          {dayGroups.map((group) => (
+            <Card key={group.date} className="overflow-hidden p-0">
+              <div className="divide-y divide-[var(--color-border)]">
+                {group.entries.map((entry) => (
+                  <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} onEdit={setToEdit} />
+                ))}
+              </div>
+              <div className="flex items-center justify-between bg-[var(--color-canvas)] px-5 py-3">
+                <span className="text-sm font-medium text-[var(--color-ink-700)]">
+                  Total del {new Date(`${group.date}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "long", timeZone: BOGOTA_TZ })}
+                </span>
+                <span className="text-sm font-semibold text-[var(--color-ink-900)]">{currency.format(group.total)}</span>
+              </div>
             </Card>
-          )}
-          {reviewed.length > 0 && (
-            <Card className="divide-y divide-[var(--color-border)] p-0">
-              {reviewed.map((entry) => (
-                <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} onEdit={setToEdit} />
-              ))}
-            </Card>
-          )}
+          ))}
         </div>
       )}
 
