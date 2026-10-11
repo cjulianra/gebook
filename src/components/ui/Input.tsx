@@ -65,18 +65,21 @@ function SearchIcon({ className }: { className?: string }) {
   );
 }
 
-// Buscador con lupa, más visible que un input genérico: borde e ícono con el
-// color de acento en vez del gris neutro de los demás campos.
+// Buscador con lupa, más visible que un input genérico: fondo beige (el
+// mismo tono de fondo que usa el resto de la app) en vez del blanco liso de
+// los demás campos.
 export const SearchInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
     <div className="relative">
-      <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--color-accent)]" />
+      <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--color-accent)]">
+        <SearchIcon className="h-5 w-5" />
+      </div>
       <input
         ref={ref}
         type="search"
         className={cn(
           fieldBase,
-          "h-12 border-[var(--color-accent)]/40 bg-[var(--color-accent-soft)]/40 pl-11 font-medium placeholder:font-normal focus:bg-[var(--color-surface)]",
+          "h-12 bg-[var(--color-canvas)] pl-11 font-medium placeholder:font-normal focus:bg-[var(--color-surface)]",
           className
         )}
         {...props}

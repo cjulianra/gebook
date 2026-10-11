@@ -630,9 +630,7 @@ function NewBookingModal({
           </div>
         </div>
 
-        {/* Día */}
         <div>
-          <Label>Día</Label>
           <WeekStrip day={bookingDay} onSelect={selectDay} onShiftWeek={(dir) => {
             const d = new Date(`${bookingDay}T00:00:00`);
             d.setDate(d.getDate() + dir * 7);
