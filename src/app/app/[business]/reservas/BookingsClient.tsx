@@ -546,7 +546,7 @@ function NewBookingModal({
           <span>
             <span className="block text-sm font-medium text-[var(--color-ink-900)]">Registro rápido</span>
             <span className="block text-xs text-[var(--color-ink-500)]">
-              Se registra con la hora de ahora mismo y puedes elegir directamente el empleado, sin esperar a ver disponibilidad.
+              Márcalo para elegir cualquier hora, aunque ya haya pasado o esté fuera del horario de atención. Úsalo cuando el servicio ya ocurrió y no se registró a tiempo.
             </span>
           </span>
         </label>
