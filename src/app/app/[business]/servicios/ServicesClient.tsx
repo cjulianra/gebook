@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
+import { formatDuration } from "@/lib/utils/dateRange";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
@@ -102,7 +103,7 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
                     {!service.is_active && <Badge tone="neutral">Inactivo</Badge>}
                   </div>
                   <p className="mt-0.5 text-sm text-[var(--color-ink-500)]">
-                    Desde {currency.format(service.price)} · {service.duration_minutes} min
+                    Desde {currency.format(service.price)} · {formatDuration(service.duration_minutes)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

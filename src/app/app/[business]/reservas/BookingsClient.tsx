@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { WeekStrip } from "@/components/ui/WeekStrip";
 import { useBusiness } from "@/lib/context/BusinessContext";
 import { cn } from "@/lib/utils/cn";
-import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
+import { BOGOTA_TZ, bogotaDateTime, formatDuration, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { getAvailableSlots } from "@/app/[slug]/actions";
 import { notifyBookingCreated } from "./actions";
 import { BookingRow } from "@/components/bookings/BookingRow";
@@ -673,7 +673,7 @@ function NewBookingModal({
                     <span className="truncate font-medium">{s.name}</span>
                   </span>
                   <span className="shrink-0 whitespace-nowrap text-xs opacity-80">
-                    {s.duration_minutes} min · Desde {currency.format(s.price)}
+                    {formatDuration(s.duration_minutes)} · Desde {currency.format(s.price)}
                   </span>
                 </button>
               );

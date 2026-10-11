@@ -33,6 +33,14 @@ export function formatTime12h(time: string) {
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
+/** Minutos a texto legible — a partir de 90 min se muestra en horas (y minutos si sobran), ej: 300 → "5 h", 100 → "1 h 40 min". */
+export function formatDuration(minutes: number) {
+  if (minutes < 90) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+}
+
 export function presetRange(preset: string): { from: string; to: string } {
   const todayKey = todayInBogota();
 

@@ -13,7 +13,7 @@ import { WeekStrip } from "@/components/ui/WeekStrip";
 import { EmptyState } from "@/components/ui/States";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils/cn";
-import { BOGOTA_TZ, bogotaDateTime, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
+import { BOGOTA_TZ, bogotaDateTime, formatDuration, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { addMinutes } from "@/components/bookings/types";
 import { getAvailableSlots, confirmBooking } from "./actions";
 
@@ -544,7 +544,7 @@ function StepServicios({
                         <span>
                           <span className="block text-sm font-medium text-[var(--color-ink-900)]">{s.name}</span>
                           <span className="block text-xs text-[var(--color-ink-500)]">
-                            {s.duration_minutes} min{s.category ? ` · ${s.category}` : ""}
+                            {formatDuration(s.duration_minutes)}{s.category ? ` · ${s.category}` : ""}
                           </span>
                         </span>
                       </span>
@@ -635,7 +635,7 @@ function StepAutoAsignado({ assignments }: { assignments: { service: Service; em
               <div key={service.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-3">
                 <span>
                   <span className="block text-sm font-medium text-[var(--color-ink-900)]">{service.name}</span>
-                  <span className="block text-xs text-[var(--color-ink-500)]">{service.duration_minutes} min</span>
+                  <span className="block text-xs text-[var(--color-ink-500)]">{formatDuration(service.duration_minutes)}</span>
                 </span>
                 <span className="flex items-center gap-2">
                   <Avatar name={employee.full_name} src={employee.photo_url} size={32} />
