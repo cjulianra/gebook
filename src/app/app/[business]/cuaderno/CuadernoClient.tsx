@@ -190,19 +190,22 @@ function EntryRow({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-      <div className="flex min-w-0 items-start gap-3">
-        {employee?.name && <Avatar name={employee.name} src={employee.photoUrl} size={36} />}
-        <div className="min-w-0">
-          <p className="font-medium text-[var(--color-ink-900)]">
-            {entry.service_name}
-            {employee?.name && <span className="font-semibold text-[var(--color-success)]"> · {employee.name}</span>}
-          </p>
-          <p className="text-sm text-[var(--color-ink-500)]">
-            {dateLabel} · {currency.format(entry.amount)}
-            {entry.client_name && <> · {entry.client_name}</>}
-            {entry.note && <> · {entry.note}</>}
-          </p>
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5 font-medium text-[var(--color-ink-900)]">
+          <span className="truncate">{entry.service_name}</span>
+          {employee?.name && (
+            <span className="inline-flex shrink-0 items-center gap-1.5 font-semibold text-[var(--color-success)]">
+              <span className="text-[var(--color-ink-300)]">·</span>
+              <Avatar name={employee.name} src={employee.photoUrl} size={18} />
+              {employee.name}
+            </span>
+          )}
         </div>
+        <p className="text-sm text-[var(--color-ink-500)]">
+          {dateLabel} · {currency.format(entry.amount)}
+          {entry.client_name && <> · {entry.client_name}</>}
+          {entry.note && <> · {entry.note}</>}
+        </p>
       </div>
       <div className="flex items-center gap-2">
         <Badge tone={status.tone}>{status.label}</Badge>
