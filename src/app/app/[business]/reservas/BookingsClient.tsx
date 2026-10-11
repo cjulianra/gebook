@@ -34,6 +34,10 @@ import {
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
+function nowInBogota() {
+  return new Intl.DateTimeFormat("en-GB", { timeZone: BOGOTA_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+}
+
 export function BookingsClient({
   businessId,
   day,
@@ -645,24 +649,24 @@ function NewBookingModal({
             checked={quickMode}
             onChange={(e) => {
               setQuickMode(e.target.checked);
-              setTime("");
+              setTime(e.target.checked ? nowInBogota() : "");
             }}
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
           />
           <span>
             <span className="block text-sm font-medium text-[var(--color-ink-900)]">Registro rápido: el servicio ya se hizo</span>
             <span className="block text-xs text-[var(--color-ink-500)]">
-              Márcalo para elegir cualquier hora, aunque ya haya pasado o esté fuera del horario de atención. Úsalo cuando el servicio ya ocurrió y no se registró a tiempo.
+              Se registra con la hora de ahora mismo y puedes elegir directamente el empleado, sin esperar a ver disponibilidad.
             </span>
           </span>
         </label>
 
-        {/* Hora */}
+        {/* Hora: en Registro rápido se usa la hora actual automáticamente y
+            este bloque no se muestra — se pasa directo a elegir empleado. */}
+        {!quickMode && (
         <div>
           <Label>Hora</Label>
-          {quickMode ? (
-            <Input type="time" value={time} onChange={(e) => selectTime(e.target.value)} placeholder="Elige una hora" />
-          ) : loadingSlots ? (
+          {loadingSlots ? (
             <p className="text-sm text-[var(--color-ink-500)]">Buscando horarios…</p>
           ) : candidateTimes.length === 0 ? (
             <p className="text-sm text-[var(--color-ink-500)]">Nadie tiene horario disponible ese día para este servicio. Prueba otro día.</p>
@@ -697,6 +701,7 @@ function NewBookingModal({
             </>
           )}
         </div>
+        )}
 
         {/* Empleados disponibles, uno por servicio, según el horario en cascada */}
         {!lockedEmployeeId &&
