@@ -4,7 +4,7 @@ export interface NavItem {
   label: string;
   href: string;
   roles: MemberRole[];
-  icon: "dashboard" | "agenda" | "services" | "employees" | "clients" | "settings" | "reports" | "profile";
+  icon: "dashboard" | "agenda" | "services" | "employees" | "clients" | "settings" | "reports" | "profile" | "notebook";
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -12,6 +12,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Reportes", href: "mis-reportes", roles: ["employee"], icon: "reports" },
   { label: "Servicios", href: "servicios", roles: ["owner", "admin"], icon: "services" },
   { label: "Empleados", href: "empleados", roles: ["owner", "admin"], icon: "employees" },
+  { label: "Cuaderno", href: "cuaderno", roles: ["owner", "admin", "employee"], icon: "notebook" },
   { label: "Clientes", href: "clientes", roles: ["owner", "admin", "employee"], icon: "clients" },
   { label: "Reportes", href: "reportes", roles: ["owner", "admin"], icon: "reports" },
   { label: "Perfil", href: "mi-perfil", roles: ["employee"], icon: "profile" },

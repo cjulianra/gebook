@@ -162,6 +162,24 @@ type PushSubscriptionRow = {
   created_at: string;
 }
 
+export type NotebookEntryStatus = "pending" | "approved" | "rejected";
+
+type NotebookEntryRow = {
+  id: string;
+  business_id: string;
+  business_member_id: string;
+  service_id: string | null;
+  service_name: string;
+  client_name: string | null;
+  amount: number;
+  note: string | null;
+  performed_at: string;
+  status: NotebookEntryStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -254,6 +272,12 @@ export interface Database {
         Row: PushSubscriptionRow;
         Insert: Partial<PushSubscriptionRow> & Pick<PushSubscriptionRow, "business_member_id" | "endpoint" | "p256dh" | "auth">;
         Update: Partial<PushSubscriptionRow>;
+        Relationships: [];
+      };
+      notebook_entries: {
+        Row: NotebookEntryRow;
+        Insert: Partial<NotebookEntryRow> & Pick<NotebookEntryRow, "business_id" | "business_member_id" | "service_name" | "amount">;
+        Update: Partial<NotebookEntryRow>;
         Relationships: [];
       };
     };

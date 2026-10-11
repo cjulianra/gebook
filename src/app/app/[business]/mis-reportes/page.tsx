@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
 import { syncBookingStatuses } from "@/lib/data/bookingStatusSync";
 import { bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
+import { getApprovedNotebookAmountByMember } from "@/lib/data/notebook";
 import { MisReportesClient } from "./MisReportesClient";
 
 function one<T>(v: T | T[] | null | undefined): T | undefined {
@@ -57,7 +58,7 @@ export default async function MisReportesPage({
   const startOfRange = bogotaDateTime(from, "00:00:00");
   const endOfRange = bogotaDateTime(to, "23:59:59.999");
 
-  const [{ data: allTimeBookings }, { data: payouts }, { data: periodBookingsRaw }] = await Promise.all([
+  const [{ data: allTimeBookings }, { data: payouts }, { data: periodBookingsRaw }, notebookAmountByMember] = await Promise.all([
     supabase.from("bookings").select("services(price)").eq("business_id", business.id).eq("business_member_id", member.id).eq("status", "completed"),
     supabase
       .from("employee_payouts")
@@ -74,13 +75,15 @@ export default async function MisReportesPage({
       .gte("start_at", startOfRange.toISOString())
       .lte("start_at", endOfRange.toISOString())
       .order("start_at", { ascending: false }),
+    getApprovedNotebookAmountByMember(supabase, business.id),
   ]);
 
   const revenue = ((allTimeBookings ?? []) as unknown as { services: { price: number } | { price: number }[] | null }[]).reduce(
     (sum, b) => sum + (one(b.services)?.price ?? 0),
     0
   );
-  const earned = (revenue * rate) / 100;
+  const notebookRevenue = notebookAmountByMember.get(member.id) ?? 0;
+  const earned = ((revenue + notebookRevenue) * rate) / 100;
 
   const periodRows = (periodBookingsRaw ?? []) as unknown as PeriodBookingRow[];
   const periodServices = periodRows.map((b) => {

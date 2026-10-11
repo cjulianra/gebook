@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBusinessBySlug } from "@/lib/data/business";
+import { getApprovedNotebookAmountByMember } from "@/lib/data/notebook";
 import { EmployeesClient } from "./EmployeesClient";
 
 export default async function EmpleadosPage({ params }: { params: Promise<{ business: string }> }) {
@@ -8,7 +9,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
   const business = await getBusinessBySlug(supabase, slug);
   if (!business) return null;
 
-  const [{ data: members }, { data: services }, { data: assignments }, { data: dayBlocks }, { data: completedBookings }, { data: payouts }] =
+  const [{ data: members }, { data: services }, { data: assignments }, { data: dayBlocks }, { data: completedBookings }, { data: payouts }, notebookAmountByMember] =
     await Promise.all([
       supabase
         .from("business_members")
@@ -29,6 +30,7 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
         .select("id, business_member_id, amount, note, paid_at, created_at")
         .eq("business_id", business.id)
         .order("paid_at", { ascending: false }),
+      getApprovedNotebookAmountByMember(supabase, business.id),
     ]);
 
   // Comisión total ganada (histórico completo) por empleado, para calcular el saldo pendiente.
@@ -37,6 +39,9 @@ export default async function EmpleadosPage({ params }: { params: Promise<{ busi
     const service = Array.isArray(b.services) ? b.services[0] : b.services;
     if (!service) continue;
     earnedByMember.set(b.business_member_id, (earnedByMember.get(b.business_member_id) ?? 0) + service.price);
+  }
+  for (const [memberId, amount] of notebookAmountByMember) {
+    earnedByMember.set(memberId, (earnedByMember.get(memberId) ?? 0) + amount);
   }
   const memberRateMap = new Map<string, number>();
   const membersForRates = (members ?? []) as unknown as {

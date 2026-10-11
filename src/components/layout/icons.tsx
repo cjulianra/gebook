@@ -21,6 +21,9 @@ const paths: Record<NavItem["icon"], React.ReactNode> = {
   profile: (
     <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm13 4h2M17 13h2M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-4 6c.5-2.5 2.2-4 4-4s3.5 1.5 4 4" />
   ),
+  notebook: (
+    <path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm0 5h1M6 12h1M6 16h1M10 8h7M10 12h7M10 16h4" />
+  ),
 };
 
 export function NavIcon({ name, className }: { name: NavItem["icon"]; className?: string }) {

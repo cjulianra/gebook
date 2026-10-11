@@ -15,7 +15,7 @@ import { PushNotificationsPrompt } from "@/components/pwa/PushNotificationsPromp
 import { AppBadgeSync } from "@/components/pwa/AppBadgeSync";
 
 // En mobile solo caben unos pocos tabs abajo; el resto vive detrás del menú hamburguesa.
-const PRIMARY_MOBILE_HREFS = ["reservas", "clientes", "reportes", "mis-reportes", "mi-perfil"];
+const PRIMARY_MOBILE_HREFS = ["reservas", "cuaderno", "reportes", "mis-reportes"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { business, membership, profile, onboardingStep } = useBusiness();
