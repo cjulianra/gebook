@@ -9,7 +9,7 @@ import { useOnboardingRefresh } from "@/components/onboarding/OnboardingGate";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input, Label, Textarea, FieldError } from "@/components/ui/Input";
+import { Input, SearchInput, Label, Textarea, FieldError } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
@@ -76,7 +76,7 @@ export function ServicesClient({ businessId, initialServices }: { businessId: st
       />
 
       {services.length > 0 && (
-        <Input
+        <SearchInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar servicio por nombre o categoría…"

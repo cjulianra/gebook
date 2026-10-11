@@ -56,6 +56,36 @@ function EyeOffIcon({ className }: { className?: string }) {
   );
 }
 
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+// Buscador con lupa, más visible que un input genérico: borde e ícono con el
+// color de acento en vez del gris neutro de los demás campos.
+export const SearchInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => (
+    <div className="relative">
+      <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--color-accent)]" />
+      <input
+        ref={ref}
+        type="search"
+        className={cn(
+          fieldBase,
+          "h-12 border-[var(--color-accent)]/40 bg-[var(--color-accent-soft)]/40 pl-11 font-medium placeholder:font-normal focus:bg-[var(--color-surface)]",
+          className
+        )}
+        {...props}
+      />
+    </div>
+  )
+);
+SearchInput.displayName = "SearchInput";
+
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
   ({ className, ...props }, ref) => (
     <textarea ref={ref} className={cn(fieldBase, "min-h-[88px] py-3", className)} {...props} />

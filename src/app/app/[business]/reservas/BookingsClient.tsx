@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input, Label, Select, FieldError } from "@/components/ui/Input";
+import { Input, SearchInput, Label, Select, FieldError } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
@@ -583,7 +583,7 @@ function NewBookingModal({
             muestra su duración y precio, y se pueden marcar varios. */}
         <div>
           <Label>Servicios</Label>
-          <Input
+          <SearchInput
             value={serviceQuery}
             onChange={(e) => setServiceQuery(e.target.value)}
             placeholder="Buscar servicio…"

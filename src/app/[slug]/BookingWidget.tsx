@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
-import { Input, Label, FieldError } from "@/components/ui/Input";
+import { Input, SearchInput, Label, FieldError } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { BusinessMark } from "@/components/layout/AppShell";
@@ -513,7 +513,7 @@ function StepServicios({
           <EmptyState title="Aún no hay servicios disponibles" description="Vuelve pronto." />
         ) : (
           <div className="space-y-3">
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" />
+            <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" />
             {filteredServices.length === 0 ? (
               <EmptyState title="Sin resultados" description="Ningún servicio coincide con tu búsqueda." />
             ) : (
