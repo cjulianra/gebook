@@ -526,33 +526,28 @@ function StepServicios({
                       type="button"
                       onClick={() => onToggle(s.id)}
                       className={cn(
-                        "flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border px-4 py-3 text-left transition-all",
+                        "flex w-full items-start gap-2.5 rounded-[var(--radius-md)] border px-4 py-3 text-left transition-all",
                         selected
                           ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
                           : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
                       )}
                     >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <span
-                          className={cn(
-                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
-                            selected ? "border-transparent bg-[var(--color-ink-900)] text-white" : "border-[var(--color-border-strong)]"
-                          )}
-                        >
-                          {selected && "✓"}
-                        </span>
-                        <span>
-                          <span className="block text-sm font-medium text-[var(--color-ink-900)]">{s.name}</span>
-                          <span className="block text-xs text-[var(--color-ink-500)]">
-                            {formatDuration(s.duration_minutes)}{s.category ? ` · ${s.category}` : ""}
-                          </span>
+                      <span
+                        className={cn(
+                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
+                          selected ? "border-transparent bg-[var(--color-ink-900)] text-white" : "border-[var(--color-border-strong)]"
+                        )}
+                      >
+                        {selected && "✓"}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-[var(--color-ink-900)]">{s.name}</span>
+                        <span className="block text-xs text-[var(--color-ink-500)]">
+                          {formatDuration(s.duration_minutes)}
+                          {s.category ? ` · ${s.category}` : ""}
+                          {showPrices ? ` · Desde ${currency.format(s.price)}` : ""}
                         </span>
                       </span>
-                      {showPrices && (
-                        <span className="shrink-0 whitespace-nowrap text-sm font-semibold text-[var(--color-ink-900)]">
-                          Desde {currency.format(s.price)}
-                        </span>
-                      )}
                     </button>
                   );
                 })}

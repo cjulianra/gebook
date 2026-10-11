@@ -655,25 +655,25 @@ function NewBookingModal({
                   type="button"
                   onClick={() => toggleService(s.id)}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-all",
+                    "flex w-full items-start gap-2.5 rounded-[var(--radius-md)] border px-3 py-2.5 text-left text-sm transition-all",
                     selected
                       ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
                       : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
                   )}
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <span
-                      className={cn(
-                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
-                        selected ? "border-transparent bg-[var(--color-ink-900)] text-white" : "border-[var(--color-border-strong)]"
-                      )}
-                    >
-                      {selected && "✓"}
-                    </span>
-                    <span className="truncate font-medium">{s.name}</span>
+                  <span
+                    className={cn(
+                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs",
+                      selected ? "border-transparent bg-[var(--color-ink-900)] text-white" : "border-[var(--color-border-strong)]"
+                    )}
+                  >
+                    {selected && "✓"}
                   </span>
-                  <span className="shrink-0 whitespace-nowrap text-xs opacity-80">
-                    {formatDuration(s.duration_minutes)} · Desde {currency.format(s.price)}
+                  <span className="min-w-0">
+                    <span className="block font-medium">{s.name}</span>
+                    <span className="block text-xs opacity-80">
+                      {formatDuration(s.duration_minutes)} · Desde {currency.format(s.price)}
+                    </span>
                   </span>
                 </button>
               );
