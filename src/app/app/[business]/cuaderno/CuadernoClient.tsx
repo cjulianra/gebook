@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { BOGOTA_TZ } from "@/lib/utils/dateRange";
 import { cn } from "@/lib/utils/cn";
-import { createNotebookEntry, deleteNotebookEntry, reviewNotebookEntry } from "./actions";
+import { createNotebookEntry, deleteNotebookEntry, editNotebookEntry, reviewNotebookEntry } from "./actions";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -51,6 +51,12 @@ function statusLabel(status: EntryStatus) {
   return { label: "Pendiente", tone: "warning" as const };
 }
 
+function employeeNameOf(entry: Entry) {
+  const member = one(entry.business_members);
+  const profile = member ? one(member.profiles) : undefined;
+  return profile?.full_name;
+}
+
 export function CuadernoClient({
   businessId,
   isAdmin,
@@ -65,6 +71,7 @@ export function CuadernoClient({
 }) {
   const [entries, setEntries] = useState(initialEntries);
   const [open, setOpen] = useState(false);
+  const [toEdit, setToEdit] = useState<Entry | null>(null);
   const showToast = useToast();
 
   async function handleReview(entry: Entry, approve: boolean) {
@@ -92,7 +99,7 @@ export function CuadernoClient({
   const reviewed = entries.filter((e) => e.status !== "pending");
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Cuaderno"
         description={
@@ -113,14 +120,14 @@ export function CuadernoClient({
           {pending.length > 0 && (
             <Card className="divide-y divide-[var(--color-border)] p-0">
               {pending.map((entry) => (
-                <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} />
+                <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} onEdit={setToEdit} />
               ))}
             </Card>
           )}
           {reviewed.length > 0 && (
             <Card className="divide-y divide-[var(--color-border)] p-0">
               {reviewed.map((entry) => (
-                <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} />
+                <EntryRow key={entry.id} entry={entry} isAdmin={isAdmin} onReview={handleReview} onDelete={handleDelete} onEdit={setToEdit} />
               ))}
             </Card>
           )}
@@ -132,10 +139,21 @@ export function CuadernoClient({
         onClose={() => setOpen(false)}
         businessId={businessId}
         services={services}
-        onCreated={(entry) => {
-          setEntries((prev) => [entry, ...prev]);
+        onCreated={(newEntries) => {
+          setEntries((prev) => [...newEntries, ...prev]);
           setOpen(false);
-          showToast("Anotación guardada, queda pendiente de revisión.");
+          showToast(newEntries.length === 1 ? "Anotación guardada, queda pendiente de revisión." : `${newEntries.length} anotaciones guardadas, quedan pendientes de revisión.`);
+        }}
+      />
+
+      <EditEntryModal
+        entry={toEdit}
+        onClose={() => setToEdit(null)}
+        businessId={businessId}
+        onSaved={(updated) => {
+          setEntries((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
+          setToEdit(null);
+          showToast("Anotación actualizada.");
         }}
       />
     </div>
@@ -147,14 +165,16 @@ function EntryRow({
   isAdmin,
   onReview,
   onDelete,
+  onEdit,
 }: {
   entry: Entry;
   isAdmin: boolean;
   onReview: (entry: Entry, approve: boolean) => void;
   onDelete: (entry: Entry) => void;
+  onEdit: (entry: Entry) => void;
 }) {
   const status = statusLabel(entry.status);
-  const employeeName = isAdmin ? one(entry.business_members)?.profiles ? one(one(entry.business_members)?.profiles) : undefined : undefined;
+  const employeeName = isAdmin ? employeeNameOf(entry) : undefined;
   const dateLabel = new Date(`${entry.performed_at}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "long", timeZone: BOGOTA_TZ });
 
   return (
@@ -162,16 +182,21 @@ function EntryRow({
       <div className="min-w-0">
         <p className="font-medium text-[var(--color-ink-900)]">
           {entry.service_name}
-          {entry.client_name && <span className="text-[var(--color-ink-500)]"> · {entry.client_name}</span>}
+          {employeeName && <span className="font-semibold text-[var(--color-success)]"> · {employeeName}</span>}
         </p>
         <p className="text-sm text-[var(--color-ink-500)]">
           {dateLabel} · {currency.format(entry.amount)}
-          {employeeName && <> · {(employeeName as { full_name: string }).full_name}</>}
+          {entry.client_name && <> · {entry.client_name}</>}
           {entry.note && <> · {entry.note}</>}
         </p>
       </div>
       <div className="flex items-center gap-2">
         <Badge tone={status.tone}>{status.label}</Badge>
+        {isAdmin && (
+          <Button size="xs" variant="neutral-soft" onClick={() => onEdit(entry)}>
+            Editar
+          </Button>
+        )}
         {isAdmin && entry.status === "pending" && (
           <>
             <Button size="xs" variant="neutral-soft" onClick={() => onReview(entry, true)}>
@@ -192,6 +217,12 @@ function EntryRow({
   );
 }
 
+interface DraftLine {
+  serviceId: string | null;
+  name: string;
+  amount: string;
+}
+
 function NewEntryModal({
   open,
   onClose,
@@ -203,68 +234,85 @@ function NewEntryModal({
   onClose: () => void;
   businessId: string;
   services: Service[];
-  onCreated: (entry: Entry) => void;
+  onCreated: (entries: Entry[]) => void;
 }) {
-  const [serviceId, setServiceId] = useState("");
   const [query, setQuery] = useState("");
+  const [lines, setLines] = useState<DraftLine[]>([]);
   const [clientName, setClientName] = useState("");
-  const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [performedAt, setPerformedAt] = useState(todayBogota());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const filteredServices = services.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()));
+  const selectedIds = new Set(lines.map((l) => l.serviceId).filter(Boolean));
 
   function reset() {
-    setServiceId("");
     setQuery("");
+    setLines([]);
     setClientName("");
-    setAmount("");
     setNote("");
     setPerformedAt(todayBogota());
     setError(null);
   }
 
-  function selectService(s: Service) {
-    setServiceId(s.id);
-    setAmount(String(s.price));
+  function toggleService(s: Service) {
+    setLines((prev) =>
+      prev.some((l) => l.serviceId === s.id)
+        ? prev.filter((l) => l.serviceId !== s.id)
+        : [...prev, { serviceId: s.id, name: s.name, amount: String(s.price) }]
+    );
+  }
+
+  function addCustom() {
+    const name = query.trim();
+    if (!name) return;
+    setLines((prev) => [...prev, { serviceId: null, name, amount: "" }]);
+    setQuery("");
+  }
+
+  function updateAmount(index: number, amount: string) {
+    setLines((prev) => prev.map((l, i) => (i === index ? { ...l, amount } : l)));
+  }
+
+  function removeLine(index: number) {
+    setLines((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit() {
     setError(null);
-    const service = services.find((s) => s.id === serviceId);
-    const serviceName = service?.name ?? query.trim();
-    if (!serviceName) return setError("Indica qué servicio hiciste.");
-    const parsedAmount = Number(amount);
-    if (!amount || Number.isNaN(parsedAmount) || parsedAmount < 0) return setError("Indica un monto válido.");
+    if (lines.length === 0) return setError("Elige al menos un servicio.");
+    const parsedLines: { serviceId: string | null; serviceName: string; amount: number }[] = [];
+    for (const line of lines) {
+      const parsedAmount = Number(line.amount);
+      if (!line.amount || Number.isNaN(parsedAmount) || parsedAmount < 0) return setError(`Indica un monto válido para "${line.name}".`);
+      parsedLines.push({ serviceId: line.serviceId, serviceName: line.name, amount: parsedAmount });
+    }
 
     setLoading(true);
-    const result = await createNotebookEntry(businessId, {
-      serviceId: service?.id ?? null,
-      serviceName,
-      clientName,
-      amount: parsedAmount,
-      note,
-      performedAt,
-    });
+    const result = await createNotebookEntry(
+      businessId,
+      parsedLines.map((l) => ({ serviceId: l.serviceId, serviceName: l.serviceName, clientName, amount: l.amount, note, performedAt }))
+    );
     setLoading(false);
     if (result.error) {
       setError(result.error);
       return;
     }
-    onCreated({
-      id: crypto.randomUUID(),
-      business_member_id: "",
-      service_id: service?.id ?? null,
-      service_name: serviceName,
-      client_name: clientName || null,
-      amount: parsedAmount,
-      note: note || null,
-      performed_at: performedAt,
-      status: "pending",
-      created_at: new Date().toISOString(),
-    });
+    onCreated(
+      parsedLines.map((l) => ({
+        id: crypto.randomUUID(),
+        business_member_id: "",
+        service_id: l.serviceId,
+        service_name: l.serviceName,
+        client_name: clientName || null,
+        amount: l.amount,
+        note: note || null,
+        performed_at: performedAt,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      }))
+    );
     reset();
   }
 
@@ -289,48 +337,74 @@ function NewEntryModal({
     >
       <div className="space-y-4">
         <div>
-          <Label>Servicio</Label>
+          <Label>Servicios (puedes elegir varios)</Label>
           <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" className="mb-2" />
           <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
             {filteredServices.length === 0 ? (
-              <p className="px-2 py-3 text-sm text-[var(--color-ink-500)]">
-                Ningún servicio coincide. Si no está en la lista, escribe el nombre arriba y continúa.
-              </p>
+              <div className="px-2 py-3 text-sm text-[var(--color-ink-500)]">
+                <p>Ningún servicio coincide.</p>
+                {query.trim() && (
+                  <Button size="xs" variant="neutral-soft" className="mt-2" onClick={addCustom}>
+                    Agregar &quot;{query.trim()}&quot; como servicio
+                  </Button>
+                )}
+              </div>
             ) : (
-              filteredServices.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => selectService(s)}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm",
-                    serviceId === s.id
-                      ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
-                      : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
-                  )}
-                >
-                  <span className="font-medium">{s.name}</span>
-                  <span className="text-xs opacity-80">{currency.format(s.price)}</span>
-                </button>
-              ))
+              filteredServices.map((s) => {
+                const selected = selectedIds.has(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => toggleService(s)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm",
+                      selected
+                        ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
+                        : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+                    )}
+                  >
+                    <span className="font-medium">{s.name}</span>
+                    <span className="text-xs opacity-80">{currency.format(s.price)}</span>
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
+
+        {lines.length > 0 && (
+          <div>
+            <Label>Monto por servicio</Label>
+            <div className="space-y-2">
+              {lines.map((line, i) => (
+                <div key={`${line.serviceId ?? "custom"}-${i}`} className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-ink-900)]">{line.name}</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={line.amount}
+                    onChange={(e) => updateAmount(i, e.target.value)}
+                    placeholder="0"
+                    style={{ width: "7rem", flex: "none" }}
+                  />
+                  <button type="button" onClick={() => removeLine(i)} aria-label="Quitar" className="text-[var(--color-ink-500)] hover:text-[var(--color-danger)]">
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <Label>Cliente (opcional)</Label>
           <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre del cliente" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Fecha</Label>
-            <Input type="date" value={performedAt} onChange={(e) => setPerformedAt(e.target.value)} />
-          </div>
-          <div>
-            <Label>Monto cobrado</Label>
-            <Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-          </div>
+        <div>
+          <Label>Fecha</Label>
+          <Input type="date" value={performedAt} onChange={(e) => setPerformedAt(e.target.value)} />
         </div>
 
         <div>
@@ -338,6 +412,100 @@ function NewEntryModal({
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: no alcancé a registrarla en la agenda" />
         </div>
 
+        <FieldError>{error ?? undefined}</FieldError>
+      </div>
+    </Modal>
+  );
+}
+
+function EditEntryModal({
+  entry,
+  onClose,
+  businessId,
+  onSaved,
+}: {
+  entry: Entry | null;
+  onClose: () => void;
+  businessId: string;
+  onSaved: (entry: Entry) => void;
+}) {
+  const [serviceName, setServiceName] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [performedAt, setPerformedAt] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [lastId, setLastId] = useState<string | null>(null);
+  if (entry && entry.id !== lastId) {
+    setLastId(entry.id);
+    setServiceName(entry.service_name);
+    setClientName(entry.client_name ?? "");
+    setAmount(String(entry.amount));
+    setNote(entry.note ?? "");
+    setPerformedAt(entry.performed_at);
+    setError(null);
+  }
+
+  if (!entry) return null;
+
+  async function handleSubmit() {
+    if (!entry) return;
+    setError(null);
+    if (!serviceName.trim()) return setError("Indica el servicio.");
+    const parsedAmount = Number(amount);
+    if (!amount || Number.isNaN(parsedAmount) || parsedAmount < 0) return setError("Indica un monto válido.");
+
+    setLoading(true);
+    const result = await editNotebookEntry(businessId, entry.id, { serviceName: serviceName.trim(), clientName, amount: parsedAmount, note, performedAt });
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    onSaved({ ...entry, service_name: serviceName.trim(), client_name: clientName || null, amount: parsedAmount, note: note || null, performed_at: performedAt });
+  }
+
+  return (
+    <Modal
+      open={!!entry}
+      onClose={onClose}
+      title="Editar anotación"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <Label>Servicio</Label>
+          <Input value={serviceName} onChange={(e) => setServiceName(e.target.value)} />
+        </div>
+        <div>
+          <Label>Cliente (opcional)</Label>
+          <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre del cliente" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Fecha</Label>
+            <Input type="date" value={performedAt} onChange={(e) => setPerformedAt(e.target.value)} />
+          </div>
+          <div>
+            <Label>Monto</Label>
+            <Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <Label>Nota (opcional)</Label>
+          <Input value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
         <FieldError>{error ?? undefined}</FieldError>
       </div>
     </Modal>
