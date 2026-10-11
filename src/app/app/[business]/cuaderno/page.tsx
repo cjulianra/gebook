@@ -29,7 +29,9 @@ export default async function CuadernoPage({ params }: { params: Promise<{ busin
     isAdmin
       ? supabase
           .from("notebook_entries")
-          .select("id, business_member_id, service_id, service_name, client_name, amount, note, performed_at, status, created_at, business_members(profiles(full_name))")
+          .select(
+            "id, business_member_id, service_id, service_name, client_name, amount, note, performed_at, status, created_at, business_members(profiles(full_name), employee_details(photo_url))"
+          )
           .eq("business_id", business.id)
           .order("created_at", { ascending: false })
       : supabase

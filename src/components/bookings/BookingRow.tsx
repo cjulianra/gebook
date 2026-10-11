@@ -111,7 +111,7 @@ export function BookingRow({
             onClick={() => onAddExtra(booking)}
             aria-label="Agregar servicio extra"
             title="Agregar servicio extra"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--color-success)] text-[var(--color-success)] hover:bg-[var(--color-success-soft)]"
           >
             <PlusIcon className="h-3.5 w-3.5" />
           </button>

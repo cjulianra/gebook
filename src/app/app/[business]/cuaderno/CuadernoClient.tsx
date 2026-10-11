@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input, Label, FieldError, SearchInput } from "@/components/ui/Input";
+import { Input, Label, FieldError, SearchInput, Select } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
@@ -38,7 +39,16 @@ export interface Entry {
   performed_at: string;
   status: EntryStatus;
   created_at: string;
-  business_members?: { profiles: { full_name: string } | { full_name: string }[] | null } | { profiles: { full_name: string } | { full_name: string }[] | null }[] | null;
+  business_members?:
+    | {
+        profiles: { full_name: string } | { full_name: string }[] | null;
+        employee_details: { photo_url: string | null } | { photo_url: string | null }[] | null;
+      }
+    | {
+        profiles: { full_name: string } | { full_name: string }[] | null;
+        employee_details: { photo_url: string | null } | { photo_url: string | null }[] | null;
+      }[]
+    | null;
 }
 
 function todayBogota() {
@@ -51,10 +61,11 @@ function statusLabel(status: EntryStatus) {
   return { label: "Pendiente", tone: "warning" as const };
 }
 
-function employeeNameOf(entry: Entry) {
+function employeeOf(entry: Entry) {
   const member = one(entry.business_members);
   const profile = member ? one(member.profiles) : undefined;
-  return profile?.full_name;
+  const details = member ? one(member.employee_details) : undefined;
+  return { name: profile?.full_name, photoUrl: details?.photo_url ?? null };
 }
 
 export function CuadernoClient({
@@ -174,21 +185,24 @@ function EntryRow({
   onEdit: (entry: Entry) => void;
 }) {
   const status = statusLabel(entry.status);
-  const employeeName = isAdmin ? employeeNameOf(entry) : undefined;
+  const employee = isAdmin ? employeeOf(entry) : undefined;
   const dateLabel = new Date(`${entry.performed_at}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "long", timeZone: BOGOTA_TZ });
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-      <div className="min-w-0">
-        <p className="font-medium text-[var(--color-ink-900)]">
-          {entry.service_name}
-          {employeeName && <span className="font-semibold text-[var(--color-success)]"> · {employeeName}</span>}
-        </p>
-        <p className="text-sm text-[var(--color-ink-500)]">
-          {dateLabel} · {currency.format(entry.amount)}
-          {entry.client_name && <> · {entry.client_name}</>}
-          {entry.note && <> · {entry.note}</>}
-        </p>
+      <div className="flex min-w-0 items-start gap-3">
+        {employee?.name && <Avatar name={employee.name} src={employee.photoUrl} size={36} />}
+        <div className="min-w-0">
+          <p className="font-medium text-[var(--color-ink-900)]">
+            {entry.service_name}
+            {employee?.name && <span className="font-semibold text-[var(--color-success)]"> · {employee.name}</span>}
+          </p>
+          <p className="text-sm text-[var(--color-ink-500)]">
+            {dateLabel} · {currency.format(entry.amount)}
+            {entry.client_name && <> · {entry.client_name}</>}
+            {entry.note && <> · {entry.note}</>}
+          </p>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Badge tone={status.tone}>{status.label}</Badge>
@@ -434,6 +448,7 @@ function EditEntryModal({
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [performedAt, setPerformedAt] = useState("");
+  const [status, setStatus] = useState<EntryStatus>("pending");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -445,6 +460,7 @@ function EditEntryModal({
     setAmount(String(entry.amount));
     setNote(entry.note ?? "");
     setPerformedAt(entry.performed_at);
+    setStatus(entry.status);
     setError(null);
   }
 
@@ -458,13 +474,20 @@ function EditEntryModal({
     if (!amount || Number.isNaN(parsedAmount) || parsedAmount < 0) return setError("Indica un monto válido.");
 
     setLoading(true);
-    const result = await editNotebookEntry(businessId, entry.id, { serviceName: serviceName.trim(), clientName, amount: parsedAmount, note, performedAt });
+    const result = await editNotebookEntry(businessId, entry.id, {
+      serviceName: serviceName.trim(),
+      clientName,
+      amount: parsedAmount,
+      note,
+      performedAt,
+      status,
+    });
     setLoading(false);
     if (result.error) {
       setError(result.error);
       return;
     }
-    onSaved({ ...entry, service_name: serviceName.trim(), client_name: clientName || null, amount: parsedAmount, note: note || null, performed_at: performedAt });
+    onSaved({ ...entry, service_name: serviceName.trim(), client_name: clientName || null, amount: parsedAmount, note: note || null, performed_at: performedAt, status });
   }
 
   return (
@@ -505,6 +528,14 @@ function EditEntryModal({
         <div>
           <Label>Nota (opcional)</Label>
           <Input value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
+        <div>
+          <Label>Estado</Label>
+          <Select value={status} onChange={(e) => setStatus(e.target.value as EntryStatus)}>
+            <option value="pending">Pendiente</option>
+            <option value="approved">Aprobada</option>
+            <option value="rejected">Rechazada</option>
+          </Select>
         </div>
         <FieldError>{error ?? undefined}</FieldError>
       </div>
