@@ -40,6 +40,8 @@ export interface Entry {
   performed_at: string;
   status: EntryStatus;
   created_at: string;
+  /** "agenda" = generada automáticamente de una reserva completada (de solo lectura); "manual" (default) = anotada por el empleado. */
+  source?: "manual" | "agenda";
   business_members?:
     | {
         profiles: { full_name: string } | { full_name: string }[] | null;
@@ -56,10 +58,12 @@ function todayBogota() {
   return new Date().toLocaleDateString("en-CA", { timeZone: BOGOTA_TZ });
 }
 
+// Si no está aprobada ni rechazada, está pendiente por definición — no hace
+// falta una pastilla "Pendiente" aparte, basta con no mostrar ninguna.
 function statusLabel(status: EntryStatus) {
   if (status === "approved") return { label: "Aprobada", tone: "success" as const };
   if (status === "rejected") return { label: "Rechazada", tone: "danger" as const };
-  return { label: "Pendiente", tone: "warning" as const };
+  return null;
 }
 
 function employeeOf(entry: Entry) {
@@ -258,6 +262,7 @@ function EntryRow({
   onEdit: (entry: Entry) => void;
 }) {
   const status = statusLabel(entry.status);
+  const fromAgenda = entry.source === "agenda";
   const employee = isAdmin ? employeeOf(entry) : undefined;
   const dateLabel = new Date(`${entry.performed_at}T00:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "long", timeZone: BOGOTA_TZ });
 
@@ -281,13 +286,18 @@ function EntryRow({
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Badge tone={status.tone}>{status.label}</Badge>
-        {isAdmin && (
+        {fromAgenda && (
+          <span title="Viene de una reserva de la Agenda" className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--color-ink-500)]">
+            <AgendaIcon className="h-4 w-4" />
+          </span>
+        )}
+        {status && <Badge tone={status.tone}>{status.label}</Badge>}
+        {!fromAgenda && isAdmin && (
           <Button size="xs" variant="neutral-soft" onClick={() => onEdit(entry)}>
             Editar
           </Button>
         )}
-        {isAdmin && entry.status === "pending" && (
+        {!fromAgenda && isAdmin && entry.status === "pending" && (
           <>
             <Button size="xs" variant="neutral-soft" onClick={() => onReview(entry, true)}>
               Aprobar
@@ -297,13 +307,21 @@ function EntryRow({
             </Button>
           </>
         )}
-        {!isAdmin && entry.status === "pending" && (
+        {!fromAgenda && !isAdmin && entry.status === "pending" && (
           <Button size="xs" variant="danger-soft" onClick={() => onDelete(entry)}>
             Borrar
           </Button>
         )}
       </div>
     </div>
+  );
+}
+
+function AgendaIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M7 3v2M17 3v2M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+    </svg>
   );
 }
 
