@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 import { WeekStrip } from "@/components/ui/WeekStrip";
 import { BOGOTA_TZ } from "@/lib/utils/dateRange";
 import { cn } from "@/lib/utils/cn";
-import { createNotebookEntry, deleteNotebookEntry, editNotebookEntry, reviewNotebookEntry } from "./actions";
+import { createNotebookEntry, deleteNotebookEntry, editAgendaEntry, editNotebookEntry, reviewNotebookEntry } from "./actions";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -292,7 +292,7 @@ function EntryRow({
           </span>
         )}
         {status && <Badge tone={status.tone}>{status.label}</Badge>}
-        {!fromAgenda && isAdmin && (
+        {isAdmin && (
           <Button size="xs" variant="neutral-soft" onClick={() => onEdit(entry)}>
             Editar
           </Button>
@@ -559,6 +559,7 @@ function EditEntryModal({
   }
 
   if (!entry) return null;
+  const fromAgenda = entry.source === "agenda";
 
   async function handleSubmit() {
     if (!entry) return;
@@ -568,20 +569,36 @@ function EditEntryModal({
     if (!amount || Number.isNaN(parsedAmount) || parsedAmount < 0) return setError("Indica un monto válido.");
 
     setLoading(true);
-    const result = await editNotebookEntry(businessId, entry.id, {
-      serviceName: serviceName.trim(),
-      clientName,
-      amount: parsedAmount,
-      note,
-      performedAt,
-      status,
-    });
+    const result = fromAgenda
+      ? await editAgendaEntry(businessId, entry.id.replace(/^booking-/, ""), entry.business_member_id, {
+          serviceName: serviceName.trim(),
+          clientName,
+          amount: parsedAmount,
+          note,
+          performedAt,
+        })
+      : await editNotebookEntry(businessId, entry.id, {
+          serviceName: serviceName.trim(),
+          clientName,
+          amount: parsedAmount,
+          note,
+          performedAt,
+          status,
+        });
     setLoading(false);
     if (result.error) {
       setError(result.error);
       return;
     }
-    onSaved({ ...entry, service_name: serviceName.trim(), client_name: clientName || null, amount: parsedAmount, note: note || null, performed_at: performedAt, status });
+    onSaved({
+      ...entry,
+      service_name: serviceName.trim(),
+      client_name: clientName || null,
+      amount: parsedAmount,
+      note: note || null,
+      performed_at: performedAt,
+      status: fromAgenda ? entry.status : status,
+    });
   }
 
   return (
@@ -623,14 +640,16 @@ function EditEntryModal({
           <Label>Nota (opcional)</Label>
           <Input value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
-        <div>
-          <Label>Estado</Label>
-          <Select value={status} onChange={(e) => setStatus(e.target.value as EntryStatus)}>
-            <option value="pending">Pendiente</option>
-            <option value="approved">Aprobada</option>
-            <option value="rejected">Rechazada</option>
-          </Select>
-        </div>
+        {!fromAgenda && (
+          <div>
+            <Label>Estado</Label>
+            <Select value={status} onChange={(e) => setStatus(e.target.value as EntryStatus)}>
+              <option value="pending">Pendiente</option>
+              <option value="approved">Aprobada</option>
+              <option value="rejected">Rechazada</option>
+            </Select>
+          </div>
+        )}
         <FieldError>{error ?? undefined}</FieldError>
       </div>
     </Modal>

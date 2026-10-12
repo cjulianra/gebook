@@ -177,6 +177,7 @@ type NotebookEntryRow = {
   status: NotebookEntryStatus;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  booking_id: string | null;
   created_at: string;
 }
 

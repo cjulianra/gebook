@@ -115,6 +115,49 @@ export async function editNotebookEntry(
   return { error: null };
 }
 
+/**
+ * El dueño/admin corrige una anotación que en realidad viene de una reserva
+ * de la Agenda (no un registro manual) — en vez de tocar la reserva real,
+ * guarda una fila de corrección vinculada por booking_id. El Cuaderno la usa
+ * para mostrar los datos editados en lugar de los originales de la reserva,
+ * sin duplicarla como una anotación aparte ni afectar los reportes (que
+ * siguen contando la reserva original).
+ */
+export async function editAgendaEntry(
+  businessId: string,
+  bookingId: string,
+  businessMemberId: string,
+  entry: { serviceName: string; clientName: string; amount: number; note: string; performedAt: string }
+) {
+  const membership = await getMembership(businessId);
+  if (!membership || (membership.role !== "owner" && membership.role !== "admin")) return { error: "No autorizado." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("notebook_entries").upsert(
+    {
+      business_id: businessId,
+      business_member_id: businessMemberId,
+      booking_id: bookingId,
+      service_name: entry.serviceName,
+      client_name: entry.clientName || null,
+      amount: entry.amount,
+      note: entry.note || null,
+      performed_at: entry.performedAt,
+      status: "approved",
+      reviewed_by: user?.id ?? null,
+      reviewed_at: new Date().toISOString(),
+    },
+    { onConflict: "booking_id" }
+  );
+  if (error) return { error: "No pudimos guardar los cambios." };
+
+  return { error: null };
+}
+
 /** El dueño/admin aprueba o rechaza una anotación — al aprobarla pasa a contar en la comisión del empleado. */
 export async function reviewNotebookEntry(businessId: string, entryId: string, approve: boolean) {
   const membership = await getMembership(businessId);

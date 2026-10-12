@@ -6,11 +6,15 @@ export async function getApprovedNotebookAmountByMember(
   supabase: SupabaseClient<Database>,
   businessId: string
 ): Promise<Map<string, number>> {
+  // booking_id not null = corrección de una anotación de Agenda, no un
+  // registro manual adicional — esa reserva ya se cuenta aparte vía la
+  // tabla bookings, así que se excluye para no duplicar el ingreso.
   const { data } = await supabase
     .from("notebook_entries")
     .select("business_member_id, amount")
     .eq("business_id", businessId)
-    .eq("status", "approved");
+    .eq("status", "approved")
+    .is("booking_id", null);
 
   const amountByMember = new Map<string, number>();
   for (const row of data ?? []) {
@@ -41,6 +45,7 @@ export async function getApprovedNotebookEntriesInRange(
     .select("id, business_member_id, service_name, client_name, amount, performed_at")
     .eq("business_id", businessId)
     .eq("status", "approved")
+    .is("booking_id", null)
     .gte("performed_at", from)
     .lte("performed_at", to);
   if (memberId) query = query.eq("business_member_id", memberId);
