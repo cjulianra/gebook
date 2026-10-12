@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { AppSplash } from "@/components/pwa/AppSplash";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <AppSplash />
         <ServiceWorkerRegister />
         {children}
       </body>
