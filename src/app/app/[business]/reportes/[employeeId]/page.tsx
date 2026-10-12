@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/States";
 import { BOGOTA_TZ, bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
+import { getApprovedNotebookAmountByMember, getApprovedNotebookEntriesInRange } from "@/lib/data/notebook";
 import { AccountButton } from "@/components/employees/AccountButton";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -75,15 +76,18 @@ export default async function EmployeeReportDetailPage({
   const rate = one(member.employee_details)?.commission_rate ?? 40;
   const photoUrl = one(member.employee_details)?.photo_url ?? null;
 
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select("id, start_at, clients(first_name, last_name), services(name, price)")
-    .eq("business_id", business.id)
-    .eq("business_member_id", employeeId)
-    .eq("status", "completed")
-    .gte("start_at", startOfRange.toISOString())
-    .lte("start_at", endOfRange.toISOString())
-    .order("start_at", { ascending: false });
+  const [{ data: bookings }, notebookEntries] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, start_at, clients(first_name, last_name), services(name, price)")
+      .eq("business_id", business.id)
+      .eq("business_member_id", employeeId)
+      .eq("status", "completed")
+      .gte("start_at", startOfRange.toISOString())
+      .lte("start_at", endOfRange.toISOString())
+      .order("start_at", { ascending: false }),
+    getApprovedNotebookEntriesInRange(supabase, business.id, from, to, employeeId),
+  ]);
 
   const rows = (bookings ?? []) as unknown as BookingRow[];
   const details = rows.map((b) => {
@@ -100,13 +104,26 @@ export default async function EmployeeReportDetailPage({
     };
   });
 
+  // Anotaciones del Cuaderno ya aprobadas en el período — mismo tratamiento que un servicio completado.
+  for (const entry of notebookEntries) {
+    details.push({
+      id: entry.id,
+      start_at: bogotaDateTime(entry.performed_at, "00:00:00").toISOString(),
+      clientName: entry.client_name ?? "—",
+      serviceName: entry.service_name,
+      price: entry.amount,
+      commission: (entry.amount * rate) / 100,
+    });
+  }
+  details.sort((a, b) => b.start_at.localeCompare(a.start_at));
+
   const totalRevenue = details.reduce((sum, d) => sum + d.price, 0);
   const totalCommission = details.reduce((sum, d) => sum + d.commission, 0);
   const rangeQuery: Record<string, string> = sp.from && sp.to ? { from: sp.from, to: sp.to } : { preset: activePreset };
   const backHref = `/app/${slug}/reportes?${new URLSearchParams(rangeQuery).toString()}`;
 
   // Cuenta (saldo): comisión ganada histórica (todo el tiempo, no solo el período filtrado) vs. pagos registrados.
-  const [{ data: allTimeBookings }, { data: payouts }] = await Promise.all([
+  const [{ data: allTimeBookings }, { data: payouts }, notebookAmountByMember] = await Promise.all([
     supabase
       .from("bookings")
       .select("services(price)")
@@ -119,13 +136,15 @@ export default async function EmployeeReportDetailPage({
       .eq("business_id", business.id)
       .eq("business_member_id", employeeId)
       .order("paid_at", { ascending: false }),
+    getApprovedNotebookAmountByMember(supabase, business.id),
   ]);
 
   const allTimeRevenue = ((allTimeBookings ?? []) as unknown as { services: { price: number } | { price: number }[] | null }[]).reduce(
     (sum, b) => sum + (one(b.services)?.price ?? 0),
     0
   );
-  const allTimeEarnedCommission = (allTimeRevenue * rate) / 100;
+  const allTimeNotebookRevenue = notebookAmountByMember.get(employeeId) ?? 0;
+  const allTimeEarnedCommission = ((allTimeRevenue + allTimeNotebookRevenue) * rate) / 100;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">

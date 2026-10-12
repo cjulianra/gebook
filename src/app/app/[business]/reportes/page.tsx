@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/States";
 import { cn } from "@/lib/utils/cn";
 import { bogotaDateTime, presetRange } from "@/lib/utils/dateRange";
+import { getApprovedNotebookEntriesInRange } from "@/lib/data/notebook";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
@@ -70,15 +71,23 @@ export default async function ReportesPage({
   const startOfRange = bogotaDateTime(from, "00:00:00");
   const endOfRange = bogotaDateTime(to, "23:59:59.999");
 
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select(
-      "id, service_id, business_member_id, services(price), business_members(id, profiles(full_name), employee_details(commission_rate, photo_url))"
-    )
-    .eq("business_id", business.id)
-    .eq("status", "completed")
-    .gte("start_at", startOfRange.toISOString())
-    .lte("start_at", endOfRange.toISOString());
+  const [{ data: bookings }, notebookEntries, { data: membersForNotebook }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select(
+        "id, service_id, business_member_id, services(price), business_members(id, profiles(full_name), employee_details(commission_rate, photo_url))"
+      )
+      .eq("business_id", business.id)
+      .eq("status", "completed")
+      .gte("start_at", startOfRange.toISOString())
+      .lte("start_at", endOfRange.toISOString()),
+    getApprovedNotebookEntriesInRange(supabase, business.id, from, to),
+    supabase
+      .from("business_members")
+      .select("id, profiles(full_name), employee_details(commission_rate, photo_url)")
+      .eq("business_id", business.id)
+      .in("role", ["employee", "admin"]),
+  ]);
 
   const rows = (bookings ?? []) as unknown as BookingRow[];
 
@@ -98,6 +107,28 @@ export default async function ReportesPage({
     existing.count += 1;
     existing.revenue += price;
     byEmployee.set(member.id, existing);
+  }
+
+  // Las anotaciones del Cuaderno ya aprobadas cuentan como servicios prestados más — mismo tratamiento que una reserva completada.
+  const membersById = new Map(
+    ((membersForNotebook ?? []) as unknown as {
+      id: string;
+      profiles: { full_name: string } | { full_name: string }[] | null;
+      employee_details: { commission_rate: number; photo_url: string | null } | { commission_rate: number; photo_url: string | null }[] | null;
+    }[]).map((m) => [m.id, m])
+  );
+  for (const entry of notebookEntries) {
+    const member = membersById.get(entry.business_member_id);
+    const profile = member ? one(member.profiles) : undefined;
+    const details = member ? one(member.employee_details) : undefined;
+    const rate = details?.commission_rate ?? 40;
+
+    const existing =
+      byEmployee.get(entry.business_member_id) ??
+      { id: entry.business_member_id, name: profile?.full_name ?? "—", photoUrl: details?.photo_url ?? null, rate, count: 0, revenue: 0 };
+    existing.count += 1;
+    existing.revenue += entry.amount;
+    byEmployee.set(entry.business_member_id, existing);
   }
 
   const employeeRows = Array.from(byEmployee.values())
@@ -198,10 +229,10 @@ export default async function ReportesPage({
                   href={`${base}/${e.id}`}
                   className="block space-y-2 px-5 py-4 active:bg-[var(--color-canvas)]"
                 >
-                  <p className="flex items-center gap-2 font-medium text-[var(--color-ink-900)]">
+                  <div className="flex items-center gap-2 font-medium text-[var(--color-ink-900)]">
                     <Avatar name={e.name} src={e.photoUrl} size={28} />
                     {e.name}
-                  </p>
+                  </div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge tone="info" className="shrink-0">
                       {e.count} servicios

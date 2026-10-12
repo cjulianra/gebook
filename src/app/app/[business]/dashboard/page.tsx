@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/States";
 import { AccountPanel, type Payout } from "@/components/employees/AccountModal";
 import { BOGOTA_TZ, bogotaDateTime, todayInBogota } from "@/lib/utils/dateRange";
+import { getApprovedNotebookAmountByMember } from "@/lib/data/notebook";
 import { TodayAgendaClient } from "./TodayAgendaClient";
 import type { Booking } from "@/components/bookings/types";
 import Link from "next/link";
@@ -59,7 +60,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
   let myAccount: { memberId: string; earned: number; payouts: Payout[] } | null = null;
   if (myMembership?.role === "employee") {
     const rate = one(myMembership.employee_details)?.commission_rate ?? 40;
-    const [{ data: myCompletedBookings }, { data: myPayouts }] = await Promise.all([
+    const [{ data: myCompletedBookings }, { data: myPayouts }, notebookAmountByMember] = await Promise.all([
       supabase
         .from("bookings")
         .select("services(price)")
@@ -72,12 +73,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ busi
         .eq("business_id", business.id)
         .eq("business_member_id", myMembership.id)
         .order("paid_at", { ascending: false }),
+      getApprovedNotebookAmountByMember(supabase, business.id),
     ]);
     const revenue = ((myCompletedBookings ?? []) as unknown as { services: { price: number } | { price: number }[] | null }[]).reduce(
       (sum, b) => sum + (one(b.services)?.price ?? 0),
       0
     );
-    myAccount = { memberId: myMembership.id, earned: (revenue * rate) / 100, payouts: myPayouts ?? [] };
+    const notebookRevenue = notebookAmountByMember.get(myMembership.id) ?? 0;
+    myAccount = { memberId: myMembership.id, earned: ((revenue + notebookRevenue) * rate) / 100, payouts: myPayouts ?? [] };
   }
 
   const todayKey = todayInBogota();

@@ -18,3 +18,32 @@ export async function getApprovedNotebookAmountByMember(
   }
   return amountByMember;
 }
+
+export interface ApprovedNotebookEntry {
+  id: string;
+  business_member_id: string;
+  service_name: string;
+  client_name: string | null;
+  amount: number;
+  performed_at: string;
+}
+
+/** Anotaciones del Cuaderno ya aprobadas por el dueño/admin, dentro de un rango de fechas — para sumarlas a los reportes del negocio. */
+export async function getApprovedNotebookEntriesInRange(
+  supabase: SupabaseClient<Database>,
+  businessId: string,
+  from: string,
+  to: string,
+  memberId?: string
+): Promise<ApprovedNotebookEntry[]> {
+  let query = supabase
+    .from("notebook_entries")
+    .select("id, business_member_id, service_name, client_name, amount, performed_at")
+    .eq("business_id", businessId)
+    .eq("status", "approved")
+    .gte("performed_at", from)
+    .lte("performed_at", to);
+  if (memberId) query = query.eq("business_member_id", memberId);
+  const { data } = await query;
+  return data ?? [];
+}
