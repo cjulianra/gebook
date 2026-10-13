@@ -189,11 +189,11 @@ export function BusinessDetailClient({
         <CardBody>
           <div className="mb-4 grid grid-cols-3 gap-3">
             <div>
-              <p className="text-xs font-medium text-[var(--color-ink-500)]">Reservas del mes</p>
+              <p className="text-xs font-medium text-[var(--color-ink-500)]">Servicios del mes</p>
               <p className="text-xl font-semibold tabular-nums text-[var(--color-ink-900)]">{totalBookings}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-[var(--color-ink-500)]">Ingresos (completadas)</p>
+              <p className="text-xs font-medium text-[var(--color-ink-500)]">Ingresos (completados + cuaderno)</p>
               <p className="text-xl font-semibold tabular-nums text-[var(--color-ink-900)]">{currency.format(totalRevenue)}</p>
             </div>
             <div>
@@ -207,7 +207,7 @@ export function BusinessDetailClient({
               <thead>
                 <tr className="border-b border-[var(--color-border)] text-left text-xs font-medium text-[var(--color-ink-500)]">
                   <th className="pb-2 pr-4">Día</th>
-                  <th className="pb-2 pr-4 text-right">Reservas</th>
+                  <th className="pb-2 pr-4 text-right">Servicios</th>
                   <th className="pb-2 pr-4 text-right">Canceladas</th>
                   <th className="pb-2 text-right">Ingresos</th>
                 </tr>

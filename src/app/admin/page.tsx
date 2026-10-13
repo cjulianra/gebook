@@ -5,7 +5,7 @@ import { AdminDashboardClient } from "./AdminDashboardClient";
 export default async function AdminPage() {
   const admin = createAdminClient();
 
-  const [{ data: businesses }, { data: members }, { data: bookings }] = await Promise.all([
+  const [{ data: businesses }, { data: members }, { data: bookings }, { data: notebookEntries }] = await Promise.all([
     admin
       .from("businesses")
       .select("id, name, slug, city, neighborhood, is_active, created_at, owner_id")
@@ -16,6 +16,15 @@ export default async function AdminPage() {
       .select("business_id, start_at, status")
       .gte("start_at", presetRange("mes").from)
       .neq("status", "cancelled"),
+    // Anotaciones manuales del Cuaderno ya aprobadas (no vinculadas a una
+    // reserva, que ya se cuentan arriba) — también son servicios prestados
+    // y deben sumar en las estadísticas que ve el super admin.
+    admin
+      .from("notebook_entries")
+      .select("business_id, performed_at")
+      .eq("status", "approved")
+      .is("booking_id", null)
+      .gte("performed_at", presetRange("mes").from),
   ]);
 
   const ownerIds = Array.from(new Set((businesses ?? []).map((b) => b.owner_id)));
@@ -40,6 +49,14 @@ export default async function AdminPage() {
     if (dayKey >= weekFrom) stats.week++;
     if (dayKey >= todayFrom) stats.today++;
     statsByBusiness.set(b.business_id, stats);
+  }
+  for (const n of notebookEntries ?? []) {
+    const dayKey = n.performed_at;
+    const stats = statsByBusiness.get(n.business_id) ?? { today: 0, week: 0, month: 0 };
+    if (dayKey >= monthFrom) stats.month++;
+    if (dayKey >= weekFrom) stats.week++;
+    if (dayKey >= todayFrom) stats.today++;
+    statsByBusiness.set(n.business_id, stats);
   }
 
   const rows = (businesses ?? []).map((b) => {

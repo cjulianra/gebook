@@ -70,7 +70,7 @@ export function AdminDashboardClient({ rows }: { rows: BusinessRow[] }) {
         <StatCard label="Negocios totales" value={totalBusinesses} />
         <StatCard label="Negocios activos" value={activeBusinesses} />
         <StatCard label="Empleados totales" value={totalEmployees} />
-        <StatCard label="Reservas hoy" value={totalBookingsToday} />
+        <StatCard label="Servicios hoy" value={totalBookingsToday} />
       </div>
 
       <Card>

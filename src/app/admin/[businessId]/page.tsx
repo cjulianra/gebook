@@ -34,7 +34,7 @@ export default async function BusinessDetailPage({
 
   if (!business) notFound();
 
-  const [{ data: owner }, { data: members }, { data: bookings }] = await Promise.all([
+  const [{ data: owner }, { data: members }, { data: bookings }, { data: notebookEntries }] = await Promise.all([
     admin.from("profiles").select("full_name, email").eq("id", business.owner_id).single(),
     admin
       .from("business_members")
@@ -47,6 +47,17 @@ export default async function BusinessDetailPage({
       .eq("business_id", businessId)
       .gte("start_at", `${from}T00:00:00-05:00`)
       .lte("start_at", `${to}T23:59:59-05:00`),
+    // Anotaciones manuales del Cuaderno ya aprobadas (no vinculadas a una
+    // reserva) — cuentan como servicio prestado e ingreso igual que una
+    // reserva completada.
+    admin
+      .from("notebook_entries")
+      .select("performed_at, amount")
+      .eq("business_id", businessId)
+      .eq("status", "approved")
+      .is("booking_id", null)
+      .gte("performed_at", from)
+      .lte("performed_at", to),
   ]);
 
   const dayStats = new Map<string, { count: number; revenue: number; cancelled: number }>();
@@ -66,6 +77,12 @@ export default async function BusinessDetailPage({
       const service = Array.isArray(b.services) ? b.services[0] : b.services;
       stats.revenue += service?.price ?? 0;
     }
+  }
+  for (const n of (notebookEntries ?? []) as { performed_at: string; amount: number }[]) {
+    const stats = dayStats.get(n.performed_at);
+    if (!stats) continue;
+    stats.count++;
+    stats.revenue += n.amount;
   }
 
   const days = Array.from(dayStats.entries()).map(([date, stats]) => ({ date, ...stats }));
