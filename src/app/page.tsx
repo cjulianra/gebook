@@ -110,6 +110,7 @@ function PhoneFrame({
   alt,
   className,
   matchHeight,
+  wide,
 }: {
   src: string;
   alt: string;
@@ -117,9 +118,12 @@ function PhoneFrame({
   /** Recorta por abajo a una altura fija compartida, para que varios celulares en fila
       se vean del mismo tamaño sin forzar un aspect-ratio que corte texto a los lados. */
   matchHeight?: boolean;
+  /** Ocupa todo el ancho disponible (hasta un máximo mayor) en vez del tamaño fijo
+      de celular pequeño — para cuando el pantallazo es el protagonista de su mitad de fila. */
+  wide?: boolean;
 }) {
   return (
-    <div className={cn("relative mx-auto w-[220px] shrink-0 sm:w-[240px]", className)}>
+    <div className={cn("relative mx-auto shrink-0", wide ? "w-full max-w-[300px] sm:max-w-[380px]" : "w-[220px] sm:w-[240px]", className)}>
       <div
         className={cn(
           "overflow-hidden rounded-[1.3rem] border-[7px] border-[var(--color-ink-900)] bg-[var(--color-ink-900)] shadow-[var(--shadow-md)] ring-1 ring-[var(--color-ink-900)]/15",
@@ -231,7 +235,7 @@ export default function LandingPage() {
       </section>
 
       {/* Showcase */}
-      <section className="mx-auto max-w-5xl px-5 py-16 sm:px-8 md:py-24">
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
         <div className="mx-auto mb-16 max-w-xl text-center">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
             Así se ve por dentro
@@ -244,11 +248,11 @@ export default function LandingPage() {
 
         <div className="flex flex-col gap-20">
           {SHOWCASE.map((item, i) => (
-            <div key={item.title} className={cn("flex flex-col items-center gap-10 md:flex-row md:gap-16", i % 2 === 1 && "md:flex-row-reverse")}>
-              <div className="shrink-0">
-                <PhoneFrame src={item.image} alt={item.alt} matchHeight />
+            <div key={item.title} className={cn("flex flex-col items-center gap-10 md:flex-row md:gap-12", i % 2 === 1 && "md:flex-row-reverse")}>
+              <div className="flex w-full justify-center md:w-1/2">
+                <PhoneFrame src={item.image} alt={item.alt} wide />
               </div>
-              <div className="max-w-sm">
+              <div className="w-full md:w-1/2">
                 <h3 style={{ fontFamily: "var(--font-display)" }} className="text-center text-2xl font-semibold text-[var(--color-ink-900)] md:text-left">
                   {item.title}
                 </h3>
