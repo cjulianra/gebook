@@ -44,13 +44,6 @@ const FEATURES = [
     title: "WhatsApp integrado",
     description: "Envía el resumen de cada reserva al cliente, y a cada empleado su código de acceso, con un solo toque.",
   },
-  {
-    icon: (
-      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8-3-1.7-.5a6.9 6.9 0 0 0-.6-1.5l1-1.6-1.4-1.4-1.6 1a7 7 0 0 0-1.5-.6L14 4h-2l-.5 1.7a7 7 0 0 0-1.5.6l-1.6-1L7 6.7l1 1.6a6.9 6.9 0 0 0-.6 1.5L4.8 10v2l1.7.5c.1.5.3 1 .6 1.5l-1 1.6 1.4 1.4 1.6-1c.5.3 1 .5 1.5.6L11 19h2l.5-1.7c.5-.1 1-.3 1.5-.6l1.6 1 1.4-1.4-1-1.6c.3-.5.5-1 .6-1.5l1.7-.5v-2Z" />
-    ),
-    title: "Acceso de empleados sin correo",
-    description: "Cada empleado entra con su celular y un código de 4 dígitos — nada de contraseñas ni correos que confirmar.",
-  },
 ];
 
 const STEPS = [
@@ -244,8 +237,8 @@ export default function LandingPage() {
             <PhoneFrame src="/landing/mock-cuaderno-empleado.png" alt="Cuaderno desde el celular del empleado" matchHeight />
             <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Para el empleado</h3>
             <p className="mx-auto mt-1.5 max-w-xs text-sm text-[var(--color-ink-500)]">
-              Anota uno o varios servicios en segundos — cliente, monto y fecha — y queda a la espera de aprobación. Las reservas
-              que sí hizo por la Agenda y ya completó aparecen solas aquí también, para tener todo su día en un solo lugar.
+              Anota el cliente, el monto y la fecha de uno o varios servicios en segundos, y quedan pendientes de aprobación. Sus
+              reservas completadas en la Agenda aparecen ahí mismo, sin anotarlas aparte.
             </p>
           </div>
           <div className="text-center">
