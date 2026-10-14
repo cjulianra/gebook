@@ -32,6 +32,13 @@ const FEATURES = [
   },
   {
     icon: (
+      <path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm0 5h1M6 12h1M6 16h1M10 8h7M10 12h7M10 16h4" />
+    ),
+    title: "Cuaderno de servicios",
+    description: "Lo que un empleado hace por fuera de la agenda queda anotado y a la espera de tu aprobación, antes de contar en sus comisiones.",
+  },
+  {
+    icon: (
       <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.45 1.27 4.9L2 22l5.25-1.38a9.96 9.96 0 0 0 4.79 1.22h.01c5.52 0 10-4.48 10-10s-4.48-9.84-10.01-9.84Zm4.56 14.17c-.25.34-1.1.89-1.98 1.18-.59.19-1.13.16-1.56.1-.48-.07-1.47-.6-1.67-1.18" />
     ),
     title: "WhatsApp integrado",
@@ -213,6 +220,75 @@ export default function LandingPage() {
             <h2 className="mt-5 font-semibold text-[var(--color-ink-900)]">Reportes del negocio</h2>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">Ingresos, comisiones y rendimiento por empleado, de un vistazo.</p>
           </div>
+        </div>
+      </section>
+
+      {/* Cuaderno showcase */}
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
+        <div className="mx-auto mb-14 max-w-2xl text-center">
+          <p className="mb-3 inline-flex items-center rounded-[var(--radius-pill)] bg-white/60 px-3 py-1 text-xs font-medium uppercase tracking-wide text-[var(--color-accent-ink)]">
+            Novedad
+          </p>
+          <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
+            Cuaderno: ningún servicio se queda sin registrar
+          </h2>
+          <p className="mt-3 text-[var(--color-ink-700)]">
+            No todos los servicios pasan por la Agenda — a veces un empleado atiende a alguien sobre la marcha, o simplemente no
+            alcanza a registrar la reserva a tiempo. El Cuaderno es el lugar donde ese servicio queda anotado igual, sin perderse
+            ni quedar por fuera de las comisiones y los reportes del negocio.
+          </p>
+        </div>
+
+        <div className="grid items-start gap-12 sm:grid-cols-2">
+          <div className="text-center">
+            <PhoneFrame src="/landing/mock-cuaderno-empleado.png" alt="Cuaderno desde el celular del empleado" matchHeight />
+            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Para el empleado</h3>
+            <p className="mx-auto mt-1.5 max-w-xs text-sm text-[var(--color-ink-500)]">
+              Anota uno o varios servicios en segundos — cliente, monto y fecha — y queda a la espera de aprobación. Las reservas
+              que sí hizo por la Agenda y ya completó aparecen solas aquí también, para tener todo su día en un solo lugar.
+            </p>
+          </div>
+          <div className="text-center">
+            <PhoneFrame src="/landing/mock-cuaderno-admin.png" alt="Cuaderno desde el celular del dueño o administrador" matchHeight />
+            <h3 className="mt-5 font-semibold text-[var(--color-ink-900)]">Para el dueño o administrador</h3>
+            <p className="mx-auto mt-1.5 max-w-xs text-sm text-[var(--color-ink-500)]">
+              Revisa cada anotación y apruébala o recházala con un toque. Solo lo aprobado pasa a contar en la comisión del
+              empleado y en los reportes del negocio — filtra por empleado o por día, con el total de cada jornada calculado solo.
+            </p>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-14 grid max-w-4xl gap-6 sm:grid-cols-2">
+          {[
+            {
+              title: "Varios servicios de una vez",
+              description: "El empleado elige varios servicios en la misma anotación — cada uno queda como un registro independiente que se aprueba por separado.",
+            },
+            {
+              title: "Se sincroniza solo con la Agenda",
+              description: "Toda reserva que sí pasó por la Agenda y se marcó como completada aparece también en el Cuaderno, identificada con un ícono — no hay que anotarla dos veces.",
+            },
+            {
+              title: "Cuenta en las comisiones y reportes",
+              description: "Apenas el dueño aprueba una anotación, su monto se suma a la comisión del empleado y a los reportes del negocio, igual que una reserva completada.",
+            },
+            {
+              title: "Totales claros, día por día",
+              description: "Las anotaciones quedan agrupadas por fecha, con el total de cada día a la vista — fácil de revisar al cierre de la jornada.",
+            },
+          ].map((item) => (
+            <div key={item.title} className="flex gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-5 text-left">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-ink)] [background:var(--gradient-accent)]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </span>
+              <div>
+                <h4 className="font-semibold text-[var(--color-ink-900)]">{item.title}</h4>
+                <p className="mt-1 text-sm text-[var(--color-ink-500)]">{item.description}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
