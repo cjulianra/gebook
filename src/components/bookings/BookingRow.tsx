@@ -32,7 +32,10 @@ export function BookingRow({
   const client = one(booking.clients);
   const service = one(booking.services);
   const employee = one(booking.business_members);
-  const editable = booking.status !== "completed" && booking.status !== "cancelled";
+  // Una reserva completada (por ejemplo un Registro rápido, que nace
+  // completado porque su hora ya pasó) igual se puede corregir o cancelar —
+  // solo una ya cancelada queda fija.
+  const editable = booking.status !== "cancelled";
 
   const startTime = new Date(booking.start_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
   const endTime = new Date(booking.end_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: BOGOTA_TZ });
@@ -93,7 +96,8 @@ export function BookingRow({
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        {editable ? (
+        {(booking.status === "completed" || booking.status === "cancelled") && <BookingStatusBadge status={booking.status} />}
+        {editable && (
           <>
             <Button size="xs" variant="neutral-soft" onClick={() => onEdit(booking)}>
               Editar
@@ -102,8 +106,6 @@ export function BookingRow({
               Cancelar
             </Button>
           </>
-        ) : (
-          <BookingStatusBadge status={booking.status} />
         )}
         {booking.status !== "cancelled" && (
           <button

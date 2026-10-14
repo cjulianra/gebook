@@ -307,6 +307,11 @@ function EntryRow({
             </Button>
           </>
         )}
+        {!fromAgenda && isAdmin && entry.status === "approved" && (
+          <Button size="xs" variant="danger-soft" onClick={() => onReview(entry, false)}>
+            Cancelar
+          </Button>
+        )}
         {!fromAgenda && !isAdmin && entry.status === "pending" && (
           <Button size="xs" variant="danger-soft" onClick={() => onDelete(entry)}>
             Borrar
