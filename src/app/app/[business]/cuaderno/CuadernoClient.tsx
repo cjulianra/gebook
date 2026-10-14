@@ -378,14 +378,16 @@ function NewEntryModal({
   }
 
   function addCustom() {
-    const name = query.trim();
-    if (!name) return;
-    setLines((prev) => [...prev, { serviceId: null, name, amount: "" }]);
+    setLines((prev) => [...prev, { serviceId: null, name: query.trim(), amount: "" }]);
     setQuery("");
   }
 
   function updateAmount(index: number, amount: string) {
     setLines((prev) => prev.map((l, i) => (i === index ? { ...l, amount } : l)));
+  }
+
+  function updateName(index: number, name: string) {
+    setLines((prev) => prev.map((l, i) => (i === index ? { ...l, name } : l)));
   }
 
   function removeLine(index: number) {
@@ -397,6 +399,7 @@ function NewEntryModal({
     if (lines.length === 0) return setError("Elige al menos un servicio.");
     const parsedLines: { serviceId: string | null; serviceName: string; amount: number }[] = [];
     for (const line of lines) {
+      if (!line.name.trim()) return setError("Indica el nombre del servicio.");
       const parsedAmount = Number(line.amount);
       if (!line.amount || Number.isNaN(parsedAmount) || parsedAmount < 0) return setError(`Indica un monto válido para "${line.name}".`);
       parsedLines.push({ serviceId: line.serviceId, serviceName: line.name, amount: parsedAmount });
@@ -453,36 +456,36 @@ function NewEntryModal({
           <Label>Servicios (puedes elegir varios)</Label>
           <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" className="mb-2" />
           <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
-            {filteredServices.length === 0 ? (
-              <div className="px-2 py-3 text-sm text-[var(--color-ink-500)]">
-                <p>Ningún servicio coincide.</p>
-                {query.trim() && (
-                  <Button size="xs" variant="neutral-soft" className="mt-2" onClick={addCustom}>
-                    Agregar &quot;{query.trim()}&quot; como servicio
-                  </Button>
-                )}
-              </div>
-            ) : (
-              filteredServices.map((s) => {
-                const selected = selectedIds.has(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggleService(s)}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm",
-                      selected
-                        ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
-                        : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
-                    )}
-                  >
-                    <span className="font-medium">{s.name}</span>
-                    <span className="text-xs opacity-80">{currency.format(s.price)}</span>
-                  </button>
-                );
-              })
+            {filteredServices.length === 0 && (
+              <p className="px-2 py-3 text-sm text-[var(--color-ink-500)]">Ningún servicio coincide con tu búsqueda.</p>
             )}
+            {filteredServices.map((s) => {
+              const selected = selectedIds.has(s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => toggleService(s)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm",
+                    selected
+                      ? "border-transparent text-[var(--color-accent-ink)] [background:var(--gradient-accent)]"
+                      : "border-[var(--color-border)] hover:bg-[var(--color-canvas)]"
+                  )}
+                >
+                  <span className="font-medium">{s.name}</span>
+                  <span className="text-xs opacity-80">{currency.format(s.price)}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={addCustom}
+              className="flex w-full items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border-strong)] px-3 py-2 text-left text-sm text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-xs">+</span>
+              <span className="font-medium">Otro</span>
+            </button>
           </div>
         </div>
 
@@ -490,22 +493,44 @@ function NewEntryModal({
           <div>
             <Label>Monto por servicio</Label>
             <div className="space-y-2">
-              {lines.map((line, i) => (
-                <div key={`${line.serviceId ?? "custom"}-${i}`} className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-ink-900)]">{line.name}</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={line.amount}
-                    onChange={(e) => updateAmount(i, e.target.value)}
-                    placeholder="0"
-                    style={{ width: "7rem", flex: "none" }}
-                  />
-                  <button type="button" onClick={() => removeLine(i)} aria-label="Quitar" className="text-[var(--color-ink-500)] hover:text-[var(--color-danger)]">
-                    ✕
-                  </button>
-                </div>
-              ))}
+              {lines.map((line, i) =>
+                line.serviceId === null ? (
+                  <div key={`custom-${i}`} className="flex items-center gap-2">
+                    <Input
+                      value={line.name}
+                      onChange={(e) => updateName(i, e.target.value)}
+                      placeholder="Nombre del servicio"
+                      className="min-w-0 flex-1"
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={line.amount}
+                      onChange={(e) => updateAmount(i, e.target.value)}
+                      placeholder="0"
+                      style={{ width: "7rem", flex: "none" }}
+                    />
+                    <button type="button" onClick={() => removeLine(i)} aria-label="Quitar" className="text-[var(--color-ink-500)] hover:text-[var(--color-danger)]">
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div key={line.serviceId} className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-ink-900)]">{line.name}</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={line.amount}
+                      onChange={(e) => updateAmount(i, e.target.value)}
+                      placeholder="0"
+                      style={{ width: "7rem", flex: "none" }}
+                    />
+                    <button type="button" onClick={() => removeLine(i)} aria-label="Quitar" className="text-[var(--color-ink-500)] hover:text-[var(--color-danger)]">
+                      ✕
+                    </button>
+                  </div>
+                )
+              )}
             </div>
           </div>
         )}

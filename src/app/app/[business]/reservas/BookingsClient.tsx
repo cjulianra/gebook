@@ -17,7 +17,7 @@ import { useBusiness } from "@/lib/context/BusinessContext";
 import { cn } from "@/lib/utils/cn";
 import { BOGOTA_TZ, bogotaDateTime, formatDuration, formatTime12h, todayInBogota } from "@/lib/utils/dateRange";
 import { getAvailableSlots } from "@/app/[slug]/actions";
-import { notifyBookingCreated } from "./actions";
+import { createCustomService, notifyBookingCreated } from "./actions";
 import { BookingRow } from "@/components/bookings/BookingRow";
 import { EditBookingModal } from "@/components/bookings/EditBookingModal";
 import { AddExtraServiceModal } from "@/components/bookings/AddExtraServiceModal";
@@ -265,7 +265,7 @@ function NewBookingModal({
   businessId,
   day,
   employees,
-  services,
+  services: initialServices,
   clients,
   assignments,
   lockedEmployeeId,
@@ -289,8 +289,15 @@ function NewBookingModal({
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [services, setServices] = useState(initialServices);
   const [lines, setLines] = useState<{ serviceId: string; employeeId: string }[]>([]);
   const [serviceQuery, setServiceQuery] = useState("");
+  const [showOtherForm, setShowOtherForm] = useState(false);
+  const [otherName, setOtherName] = useState("");
+  const [otherPrice, setOtherPrice] = useState("");
+  const [otherDuration, setOtherDuration] = useState("");
+  const [otherError, setOtherError] = useState<string | null>(null);
+  const [otherLoading, setOtherLoading] = useState(false);
   const [bookingDay, setBookingDay] = useState(day);
   const [time, setTime] = useState("");
   const [quickMode, setQuickMode] = useState(false);
@@ -404,6 +411,34 @@ function NewBookingModal({
     }
     return times;
   }, [candidateTimes]);
+
+  async function handleAddCustomService() {
+    setOtherError(null);
+    const price = Number(otherPrice);
+    const duration = Number(otherDuration);
+    if (!otherName.trim()) return setOtherError("Indica el nombre del servicio.");
+    if (!otherPrice || Number.isNaN(price) || price < 0) return setOtherError("Indica un precio válido.");
+    if (!otherDuration || Number.isNaN(duration) || duration <= 0) return setOtherError("Indica una duración válida.");
+
+    setOtherLoading(true);
+    const result = await createCustomService(businessId, { name: otherName.trim(), price, durationMinutes: duration });
+    setOtherLoading(false);
+    if (result.error || !result.service) {
+      setOtherError(result.error ?? "No pudimos crear el servicio.");
+      return;
+    }
+    // No usar toggleService aquí: reordena `lines` filtrando sobre el
+    // arreglo `services` del closure, que en este mismo tick todavía no
+    // incluye el servicio recién creado (setServices es asíncrono) — eso
+    // vaciaba la línea agregada. Se agrega directo al final en su lugar.
+    setServices((prev) => [...prev, result.service!]);
+    setLines((prev) => [...prev, { serviceId: result.service!.id, employeeId: lockedEmployeeId ?? "" }]);
+    setTime(quickMode ? nowInBogota() : "");
+    setShowOtherForm(false);
+    setOtherName("");
+    setOtherPrice("");
+    setOtherDuration("");
+  }
 
   function toggleService(serviceId: string) {
     setLines((prev) => {
@@ -702,7 +737,34 @@ function NewBookingModal({
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setShowOtherForm((v) => !v)}
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border border-dashed px-3 py-2.5 text-left text-sm transition-all",
+                showOtherForm
+                  ? "border-[var(--color-accent)] text-[var(--color-accent-ink)] bg-[var(--color-accent-soft)]"
+                  : "border-[var(--color-border-strong)] text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+              )}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-xs">+</span>
+              <span className="font-medium">Otro</span>
+            </button>
           </div>
+
+          {showOtherForm && (
+            <div className="mt-2 space-y-2.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] p-3">
+              <Input value={otherName} onChange={(e) => setOtherName(e.target.value)} placeholder="Nombre del servicio" />
+              <div className="grid grid-cols-2 gap-2.5">
+                <Input type="number" min="0" value={otherPrice} onChange={(e) => setOtherPrice(e.target.value)} placeholder="Precio" />
+                <Input type="number" min="1" value={otherDuration} onChange={(e) => setOtherDuration(e.target.value)} placeholder="Duración (min)" />
+              </div>
+              <FieldError>{otherError ?? undefined}</FieldError>
+              <Button type="button" size="sm" onClick={handleAddCustomService} disabled={otherLoading}>
+                {otherLoading ? "Agregando…" : "Agregar servicio"}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div>
