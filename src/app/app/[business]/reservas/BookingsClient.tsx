@@ -699,7 +699,7 @@ function NewBookingModal({
             placeholder="Buscar servicio…"
             className="mb-2"
           />
-          <div className="max-h-72 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
+          <div className="space-y-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
             {services
               .filter((s) => {
                 const q = serviceQuery.trim().toLowerCase();

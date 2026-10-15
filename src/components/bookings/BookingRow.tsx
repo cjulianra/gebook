@@ -82,7 +82,7 @@ export function BookingRow({
         )}
       </div>
 
-      <p className="flex min-w-0 items-center gap-x-2 text-sm">
+      <div className="flex min-w-0 items-center gap-x-2 text-sm">
         <span className="truncate font-medium text-[var(--color-ink-900)]">
           {client?.first_name} {client?.last_name ?? ""}
         </span>
@@ -93,7 +93,7 @@ export function BookingRow({
         </span>
         <span className="h-3 w-px shrink-0 bg-[var(--color-border-strong)]" />
         <span className="min-w-0 truncate text-[var(--color-ink-500)]">{service?.name}</span>
-      </p>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         {(booking.status === "completed" || booking.status === "cancelled") && <BookingStatusBadge status={booking.status} />}

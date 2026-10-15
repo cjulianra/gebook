@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
-import { Label, FieldError, SearchInput } from "@/components/ui/Input";
+import { Input, Label, FieldError, SearchInput } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/utils/cn";
 import { formatDuration } from "@/lib/utils/dateRange";
+import { createCustomService } from "@/app/app/[business]/reservas/actions";
 import { type Assignment, type Booking, type Employee, type Service, one } from "./types";
 
 const currency = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -44,6 +45,13 @@ export function AddExtraServiceModal({
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [localServices, setLocalServices] = useState(services);
+  const [showOtherForm, setShowOtherForm] = useState(false);
+  const [otherName, setOtherName] = useState("");
+  const [otherPrice, setOtherPrice] = useState("");
+  const [otherDuration, setOtherDuration] = useState("");
+  const [otherError, setOtherError] = useState<string | null>(null);
+  const [otherLoading, setOtherLoading] = useState(false);
 
   const [lastBookingId, setLastBookingId] = useState<string | null>(null);
   if (booking && booking.id !== lastBookingId) {
@@ -52,16 +60,27 @@ export function AddExtraServiceModal({
     setEmployeeId(lockedEmployeeId ?? booking.business_member_id ?? "");
     setQuery("");
     setError(null);
+    setShowOtherForm(false);
+    setOtherName("");
+    setOtherPrice("");
+    setOtherDuration("");
+    setOtherError(null);
   }
 
   if (!booking) return null;
   const client = one(booking.clients);
   const originalService = one(booking.services);
 
-  const filteredServices = services.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()));
+  const filteredServices = localServices.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()));
 
+  // Si nadie quedó asignado a este servicio (p. ej. uno recién creado con
+  // "Otro"), se asume que cualquier empleado lo puede hacer — mismo criterio
+  // que en Nueva reserva y Editar reserva.
   const eligibleEmployees = serviceId
-    ? employees.filter((e) => assignments.some((a) => a.service_id === serviceId && a.business_member_id === e.id))
+    ? (() => {
+        const assigned = employees.filter((e) => assignments.some((a) => a.service_id === serviceId && a.business_member_id === e.id));
+        return assigned.length > 0 ? assigned : employees;
+      })()
     : [];
 
   function selectService(id: string) {
@@ -70,13 +89,36 @@ export function AddExtraServiceModal({
     setEmployeeId(lockedEmployeeId ?? (assignedIds.includes(booking!.business_member_id) ? booking!.business_member_id : ""));
   }
 
+  async function handleAddCustomService() {
+    setOtherError(null);
+    const price = Number(otherPrice);
+    const duration = Number(otherDuration);
+    if (!otherName.trim()) return setOtherError("Indica el nombre del servicio.");
+    if (!otherPrice || Number.isNaN(price) || price < 0) return setOtherError("Indica un precio válido.");
+    if (!otherDuration || Number.isNaN(duration) || duration <= 0) return setOtherError("Indica una duración válida.");
+
+    setOtherLoading(true);
+    const result = await createCustomService(businessId, { name: otherName.trim(), price, durationMinutes: duration });
+    setOtherLoading(false);
+    if (result.error || !result.service) {
+      setOtherError(result.error ?? "No pudimos crear el servicio.");
+      return;
+    }
+    setLocalServices((prev) => [...prev, result.service!]);
+    selectService(result.service.id);
+    setShowOtherForm(false);
+    setOtherName("");
+    setOtherPrice("");
+    setOtherDuration("");
+  }
+
   async function handleSubmit() {
     if (!booking) return;
     setError(null);
     if (!serviceId) return setError("Elige el servicio extra.");
     if (!employeeId) return setError("Selecciona quién lo hace.");
 
-    const service = services.find((s) => s.id === serviceId);
+    const service = localServices.find((s) => s.id === serviceId);
     if (!service) return;
 
     setLoading(true);
@@ -137,7 +179,7 @@ export function AddExtraServiceModal({
         <div>
           <Label>Servicio extra</Label>
           <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" className="mb-2" />
-          <div className="max-h-60 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
+          <div className="space-y-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
             {filteredServices.length === 0 ? (
               <p className="px-2 py-3 text-sm text-[var(--color-ink-500)]">Ningún servicio coincide con tu búsqueda.</p>
             ) : (
@@ -173,7 +215,34 @@ export function AddExtraServiceModal({
                 );
               })
             )}
+            <button
+              type="button"
+              onClick={() => setShowOtherForm((v) => !v)}
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border border-dashed px-3 py-2.5 text-left text-sm transition-all",
+                showOtherForm
+                  ? "border-[var(--color-accent)] text-[var(--color-accent-ink)] bg-[var(--color-accent-soft)]"
+                  : "border-[var(--color-border-strong)] text-[var(--color-ink-700)] hover:bg-[var(--color-canvas)]"
+              )}
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-xs">+</span>
+              <span className="font-medium">Otro</span>
+            </button>
           </div>
+
+          {showOtherForm && (
+            <div className="mt-2 space-y-2.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-canvas)] p-3">
+              <Input value={otherName} onChange={(e) => setOtherName(e.target.value)} placeholder="Nombre del servicio" />
+              <div className="grid grid-cols-2 gap-2.5">
+                <Input type="number" min="0" value={otherPrice} onChange={(e) => setOtherPrice(e.target.value)} placeholder="Precio" />
+                <Input type="number" min="1" value={otherDuration} onChange={(e) => setOtherDuration(e.target.value)} placeholder="Duración (min)" />
+              </div>
+              <FieldError>{otherError ?? undefined}</FieldError>
+              <Button type="button" size="sm" onClick={handleAddCustomService} disabled={otherLoading}>
+                {otherLoading ? "Agregando…" : "Agregar servicio"}
+              </Button>
+            </div>
+          )}
         </div>
 
         {!lockedEmployeeId && serviceId && (

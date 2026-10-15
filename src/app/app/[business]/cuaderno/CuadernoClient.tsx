@@ -455,7 +455,7 @@ function NewEntryModal({
         <div>
           <Label>Servicios (puedes elegir varios)</Label>
           <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar servicio…" className="mb-2" />
-          <div className="max-h-44 space-y-1.5 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
+          <div className="space-y-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] p-2">
             {filteredServices.length === 0 && (
               <p className="px-2 py-3 text-sm text-[var(--color-ink-500)]">Ningún servicio coincide con tu búsqueda.</p>
             )}
