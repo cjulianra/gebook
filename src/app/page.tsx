@@ -1,48 +1,63 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Fraunces } from "next/font/google";
 import { cn } from "@/lib/utils/cn";
 
 const fraunces = Fraunces({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-display" });
 
+export const metadata: Metadata = {
+  title: "Software para Salones de Belleza",
+  description:
+    "Gestiona las citas, empleados, comisiones y servicios de tu salón de belleza desde un solo lugar. Ofrece reservas online y organiza tu negocio con Gebook.",
+};
+
 const FEATURES = [
   {
     icon: (
       <path d="M7 3v2M17 3v2M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
     ),
-    title: "Agenda del día a día",
+    title: "Agenda de citas por empleado",
     description:
-      "Crea reservas tú mismo para tus clientes, o deja que ellos agenden solos — las dos entran a la misma agenda, organizada por empleado.",
+      "Organiza las reservas de tu salón por profesional, consulta los horarios disponibles y gestiona las citas desde una agenda compartida. También puedes permitir que tus clientes reserven directamente desde el enlace de tu negocio.",
   },
   {
     icon: <path d="M12 2 9.5 7l-5.5.8 4 3.9-1 5.3L12 14.5l4.9 2.5-.9-5.3 4-3.9L14.5 7 12 2Z" />,
-    title: "Página pública de reservas",
-    description: "Cada negocio recibe su propio link (gebook.site/tu-negocio) para que los clientes agenden solos, a cualquier hora.",
+    title: "Reservas online las 24 horas",
+    description:
+      "Comparte tu página de reservas para que tus clientes elijan los servicios y horarios disponibles sin necesidad de crear una cuenta. Las reservas se incorporan a la agenda del negocio.",
   },
   {
     icon: (
       <path d="M16 11a4 4 0 1 0-4-4M16 11a4 4 0 0 1 0 0ZM2 20c0-3.3 2.7-6 6-6M22 20c0-2.8-2-5.1-4.7-5.7M8 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 4c3.3 0 6 2.7 6 6H2c0-3.3 2.7-6 6-6Z" />
     ),
-    title: "Empleados con su propia comisión",
-    description: "Define el % de cada empleado, lleva su cuenta de pagos pendientes y controla qué puede ver o hacer cada uno.",
-  },
-  {
-    icon: <path d="M4 20V10M10 20V4M16 20v-7M4 20h16" />,
-    title: "Reportes por período",
-    description: "Ingresos, comisiones y servicios completados, filtrados por hoy, esta semana o este mes — para el negocio y para cada empleado.",
+    title: "Control de empleados y comisiones",
+    description:
+      "Configura las comisiones de cada empleado, administra sus permisos y consulta los servicios realizados y las liquidaciones pendientes. Mantén la información organizada para que el cálculo de las comisiones no dependa de hojas de cálculo.",
   },
   {
     icon: (
       <path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm0 5h1M6 12h1M6 16h1M10 8h7M10 12h7M10 16h4" />
     ),
-    title: "Cuaderno de servicios",
-    description: "Lo que un empleado hace por fuera de la agenda queda anotado y a la espera de tu aprobación, antes de contar en sus comisiones.",
+    title: "Registro de servicios realizados",
+    description:
+      "Registra los servicios que se atendieron fuera de la agenda o que no se anotaron a tiempo. Revisa las anotaciones de tu equipo y aprueba los registros antes de que se reflejen en los reportes y las comisiones.",
+  },
+  {
+    icon: <path d="M4 20V10M10 20V4M16 20v-7M4 20h16" />,
+    title: "Reportes para conocer el rendimiento del negocio",
+    description:
+      "Consulta los ingresos registrados, los servicios completados y las comisiones por periodo y empleado. Revisa el desempeño de tu negocio con información centralizada y actualizada según los registros del sistema.",
   },
   {
     icon: (
-      <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.45 1.27 4.9L2 22l5.25-1.38a9.96 9.96 0 0 0 4.79 1.22h.01c5.52 0 10-4.48 10-10s-4.48-9.84-10.01-9.84Zm4.56 14.17c-.25.34-1.1.89-1.98 1.18-.59.19-1.13.16-1.56.1-.48-.07-1.47-.6-1.67-1.18" />
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3.5 2" />
+      </>
     ),
-    title: "WhatsApp integrado",
-    description: "Envía el resumen de cada reserva al cliente, y a cada empleado su código de acceso, con un solo toque.",
+    title: "Historial y seguimiento de las reservas",
+    description:
+      "Mantén las reservas y los servicios realizados organizados para consultar la actividad del negocio y hacer seguimiento a la operación diaria.",
   },
 ];
 
@@ -91,10 +106,61 @@ const SHOWCASE = [
 ];
 
 const STEPS = [
-  { n: "1", title: "Crea tu cuenta", description: "Regístrate con tu correo y dale un nombre a tu negocio." },
-  { n: "2", title: "Agrega servicios y empleados", description: "Define qué ofreces, quién lo hace y su comisión." },
-  { n: "3", title: "Comparte tu link", description: "Tu página pública de reservas queda lista al instante." },
-  { n: "4", title: "Recibe reservas", description: "Gestiona tu agenda día a día, desde el computador o el celular." },
+  { n: "1", title: "Crea la cuenta de tu negocio", description: "Registra tu negocio y configura el espacio desde el que administrarás la operación." },
+  {
+    n: "2",
+    title: "Agrega tus servicios y empleados",
+    description: "Define los servicios que ofreces, sus precios, los profesionales que los realizan y sus comisiones.",
+  },
+  {
+    n: "3",
+    title: "Comparte tu página de reservas",
+    description: "Envía el enlace a tus clientes para que puedan consultar la disponibilidad y elegir sus servicios.",
+  },
+  {
+    n: "4",
+    title: "Administra la actividad diaria",
+    description: "Organiza las citas, registra los servicios realizados y consulta los reportes de tu negocio desde el celular o el computador.",
+  },
+];
+
+const FAQS = [
+  {
+    q: "¿Qué es Gebook?",
+    a: "Gebook es una plataforma para gestionar la operación de salones de belleza, peluquerías y barberías. Reúne agenda de citas, reservas online, empleados, comisiones, registro de servicios y reportes.",
+  },
+  {
+    q: "¿Mis clientes pueden reservar sin crear una cuenta?",
+    a: "Sí. Cada negocio tiene una página pública de reservas que puede compartir con sus clientes. Desde allí pueden seleccionar servicios y horarios disponibles sin registrarse.",
+  },
+  {
+    q: "¿Puedo administrar las citas de varios empleados?",
+    a: "Sí. La agenda permite organizar las reservas por empleado y gestionar las citas del equipo desde un mismo lugar.",
+  },
+  {
+    q: "¿Cómo puedo controlar las comisiones de mis empleados?",
+    a: "Puedes configurar la comisión de cada empleado y consultar los servicios que se han completado o aprobado, junto con los reportes correspondientes.",
+  },
+  {
+    q: "¿Qué ocurre con los servicios que no se registraron en la agenda?",
+    a: "Puedes utilizar el Cuaderno para registrar servicios realizados fuera de la agenda. El administrador revisa las anotaciones y aprueba o rechaza cada registro antes de que cuente para las comisiones y los reportes.",
+  },
+  {
+    q: "¿Puedo usar Gebook desde el celular y el computador?",
+    a: "Sí. Gebook está diseñado para utilizarse desde el celular o el computador, y puede instalarse como una aplicación web progresiva (PWA) en dispositivos compatibles.",
+  },
+  {
+    q: "¿Para qué tipos de negocio está pensado Gebook?",
+    a: "Está pensado para salones de belleza, peluquerías, barberías, spas y otros negocios de belleza que necesiten organizar sus citas y controlar la actividad de su equipo.",
+  },
+];
+
+const BENEFITS = [
+  { title: "Organiza las citas", description: "consulta quién atiende cada servicio y cuándo." },
+  { title: "Reduce los registros dispersos", description: "reúne los servicios agendados y las anotaciones del Cuaderno." },
+  { title: "Controla las comisiones", description: "revisa qué servicios se han aprobado y qué corresponde a cada empleado." },
+  { title: "Consulta los resultados", description: "revisa los servicios y las cifras registradas por periodo." },
+  { title: "Facilita las reservas", description: "comparte un enlace para que tus clientes puedan agendar por su cuenta." },
 ];
 
 function FeatureIcon({ children }: { children: React.ReactNode }) {
@@ -184,18 +250,19 @@ export default function LandingPage() {
             style={{ fontFamily: "var(--font-display)" }}
             className="text-balance text-4xl font-semibold leading-[1.1] text-[var(--color-ink-900)] sm:text-5xl"
           >
-            Tu negocio de belleza, organizado de principio a fin
+            Software para salones de belleza, peluquerías y barberías
           </h1>
           <p className="mt-5 max-w-md text-balance text-lg text-[var(--color-ink-700)]">
-            Agenda, empleados, comisiones, reportes y reservas públicas para tus clientes — todo en un solo lugar, pensado para
-            salones, barberías, spas y estudios de belleza.
+            Organiza las citas, administra tu equipo y controla las comisiones desde un solo lugar. Con Gebook puedes gestionar los
+            servicios de tu negocio y permitir que tus clientes reserven online, sin depender de cuadernos ni conversaciones
+            dispersas.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/register"
               className="rounded-[var(--radius-pill)] px-6 py-3 text-sm font-semibold text-[var(--color-accent-ink)] shadow-[var(--shadow-md)] [background:var(--gradient-accent-strong)]"
             >
-              Crea tu cuenta gratis
+              Comenzar gratis
             </Link>
             <a
               href="#funciona"
@@ -217,9 +284,13 @@ export default function LandingPage() {
       <section id="funciones" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
         <div className="mx-auto mb-12 max-w-xl text-center">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
-            Todo lo que tu negocio necesita
+            Gestiona tu salón de belleza desde un solo lugar
           </h2>
-          <p className="mt-3 text-[var(--color-ink-700)]">Sin planillas sueltas, sin WhatsApp perdido entre chats — un solo sistema para administrar tu día a día.</p>
+          <p className="mt-3 text-[var(--color-ink-700)]">
+            Deja atrás los registros dispersos y reúne la operación diaria de tu negocio en una plataforma. Organiza la agenda,
+            administra los servicios, lleva el control de tus empleados y consulta los resultados de tu salón sin reconstruir la
+            información al final del día.
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
@@ -283,11 +354,38 @@ export default function LandingPage() {
         <DesktopFrame src="/landing/mock-desktop-agenda.png" alt="Agenda del negocio en computador" />
       </section>
 
+      {/* Benefits */}
+      <section className="mx-auto max-w-5xl px-5 py-16 sm:px-8 md:py-24">
+        <div className="mx-auto mb-12 max-w-xl text-center">
+          <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
+            Menos trabajo administrativo, más control de tu negocio
+          </h2>
+          <p className="mt-3 text-[var(--color-ink-700)]">
+            Gebook conecta la agenda, el equipo y los servicios realizados para que la información no quede repartida entre
+            libretas, mensajes y archivos separados.
+          </p>
+        </div>
+        <ul className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
+          {BENEFITS.map((b) => (
+            <li key={b.title} className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 p-5">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--color-accent-ink)] [background:var(--gradient-accent)]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </span>
+              <p className="text-sm text-[var(--color-ink-700)]">
+                <span className="font-semibold text-[var(--color-ink-900)]">{b.title}:</span> {b.description}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {/* How it works */}
       <section id="funciona" className="mx-auto max-w-5xl px-5 py-16 sm:px-8 md:py-24">
         <div className="mx-auto mb-14 max-w-xl text-center">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
-            Empieza en cuatro pasos
+            Empieza a gestionar tu salón de belleza con Gebook
           </h2>
         </div>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -303,21 +401,50 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="mx-auto max-w-3xl px-5 py-16 sm:px-8 md:py-24">
+        <div className="mx-auto mb-12 max-w-xl text-center">
+          <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
+            Preguntas frecuentes sobre el software para salones de belleza
+          </h2>
+        </div>
+        <div className="divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/80">
+          {FAQS.map((item) => (
+            <details key={item.q} className="group p-5 open:bg-white/40">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-[var(--color-ink-900)]">
+                {item.q}
+                <span className="shrink-0 text-xl text-[var(--color-ink-400)] transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p className="mt-3 text-sm text-[var(--color-ink-700)]">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="mx-auto max-w-4xl px-5 py-16 text-center sm:px-8 md:py-24">
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-8 py-14 shadow-[var(--shadow-sm)]">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
-            Tu negocio merece algo mejor que una libreta
+            Dedica menos tiempo a organizar y más tiempo a tu negocio
           </h2>
           <p className="mx-auto mt-3 max-w-md text-[var(--color-ink-700)]">
-            Crea tu cuenta gratis y ten tu agenda, tu equipo y tu página de reservas listos hoy mismo.
+            Centraliza las reservas, los servicios y la gestión de tu equipo en Gebook. Empieza a organizar tu negocio de belleza
+            desde un solo lugar.
           </p>
-          <Link
-            href="/register"
-            className="mt-7 inline-block rounded-[var(--radius-pill)] px-7 py-3 text-sm font-semibold text-[var(--color-accent-ink)] shadow-[var(--shadow-md)] [background:var(--gradient-accent-strong)]"
-          >
-            Crear cuenta gratis
-          </Link>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/register"
+              className="inline-block rounded-[var(--radius-pill)] px-7 py-3 text-sm font-semibold text-[var(--color-accent-ink)] shadow-[var(--shadow-md)] [background:var(--gradient-accent-strong)]"
+            >
+              Crear mi cuenta
+            </Link>
+            <a
+              href="#funciones"
+              className="inline-block rounded-[var(--radius-pill)] px-7 py-3 text-sm font-medium text-[var(--color-ink-700)] hover:bg-white/50"
+            >
+              Conocer Gebook
+            </a>
+          </div>
         </div>
       </section>
 
