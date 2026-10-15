@@ -251,7 +251,7 @@ export default function LandingPage() {
         <nav className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/login"
-            className="rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium text-[var(--color-ink-700)] hover:bg-white/50"
+            className="rounded-[var(--radius-pill)] bg-[var(--color-ink-900)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Iniciar sesión
           </Link>
@@ -290,7 +290,7 @@ export default function LandingPage() {
             </Link>
             <a
               href="#funciona"
-              className="rounded-[var(--radius-pill)] px-6 py-3 text-sm font-medium text-[var(--color-ink-700)] hover:bg-white/50"
+              className="rounded-[var(--radius-pill)] bg-[var(--color-ink-900)] px-6 py-3 text-sm font-medium text-white hover:opacity-90"
             >
               Ver cómo funciona ↓
             </a>
@@ -466,10 +466,12 @@ export default function LandingPage() {
               Crear mi cuenta
             </Link>
             <a
-              href="#funciones"
-              className="inline-block rounded-[var(--radius-pill)] px-7 py-3 text-sm font-medium text-[var(--color-ink-700)] hover:bg-white/50"
+              href="https://wa.me/573044460871"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-[var(--radius-pill)] bg-[var(--color-ink-900)] px-7 py-3 text-sm font-medium text-white hover:opacity-90"
             >
-              Conocer Gebook
+              Contactar asesor
             </a>
           </div>
         </div>
