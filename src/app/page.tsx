@@ -64,43 +64,67 @@ const FEATURES = [
 const SHOWCASE = [
   {
     image: "/landing/mock-agenda.png",
-    alt: "Agenda del negocio",
-    title: "Agenda del negocio",
+    alt: "Agenda de citas para salones de belleza",
+    title: "Agenda de citas para salones de belleza",
+    intro:
+      "Organiza las reservas de tu negocio en una agenda centralizada, con los servicios y empleados correspondientes. Crea citas manualmente, consulta las próximas atenciones y marca los servicios completados para mantener la información de tu equipo al día.",
     bullets: [
-      "Crea reservas tú mismo para cualquier cliente, en segundos.",
-      "Envía el resumen de la reserva por WhatsApp con un toque.",
-      "Marca servicios como completados y lleva el control de cada empleado.",
+      "Crea y administra reservas para tus clientes en segundos.",
+      "Consulta las citas organizadas por empleado.",
+      "Envía los detalles de cada reserva por WhatsApp.",
+      "Lleva el seguimiento de los servicios realizados.",
     ],
   },
   {
     image: "/landing/mock-public.png",
-    alt: "Página pública de reservas",
-    title: "Reserva pública",
+    alt: "Sistema de reservas online para salones de belleza",
+    title: "Sistema de reservas online para tus clientes",
+    intro:
+      "Dale a tu negocio una página de reservas online con su propio enlace. Compártelo por WhatsApp, Instagram o tus otros canales para que tus clientes puedan consultar los servicios y reservar cuando lo necesiten, incluso fuera de tu horario de atención.",
     bullets: [
-      "Cada negocio recibe su propio link para que los clientes reserven solos.",
-      "Disponible 24/7, sin necesidad de crear una cuenta.",
-      "Pueden elegir varios servicios a la vez y ver el precio total antes de confirmar.",
+      "Permite reservar sin necesidad de crear una cuenta.",
+      "Ofrece la posibilidad de seleccionar varios servicios en una misma reserva.",
+      "Muestra el precio total antes de confirmar.",
+      "Centraliza las reservas online y las citas creadas desde tu negocio.",
+    ],
+  },
+  {
+    image: "/landing/mock-empleados.png",
+    alt: "Control de empleados y comisiones",
+    title: "Control de empleados y comisiones",
+    intro:
+      "Gestiona el equipo de tu salón de belleza o barbería con mayor claridad. Configura las comisiones de cada empleado y consulta los valores pendientes de pago, los servicios realizados y la información que corresponde a cada integrante del equipo.",
+    bullets: [
+      "Define el porcentaje de comisión de cada empleado.",
+      "Consulta los servicios completados por persona.",
+      "Lleva el control de las comisiones pendientes.",
+      "Administra los permisos de acceso según las funciones de cada empleado.",
     ],
   },
   {
     image: "/landing/mock-reportes.png",
-    alt: "Reportes del negocio",
-    title: "Reportes del negocio",
+    alt: "Reportes de ingresos y servicios por empleado",
+    title: "Reportes de ingresos y servicios por empleado",
+    intro:
+      "Consulta el rendimiento de tu negocio con reportes de ingresos, comisiones y servicios completados. Filtra la información por día, semana o mes para entender mejor la actividad de tu salón y revisar los resultados individuales de tu equipo.",
     bullets: [
-      "Ingresos, comisiones y servicios completados por empleado.",
-      "Filtra por hoy, esta semana o este mes.",
-      "Compara el rendimiento de todo tu equipo de un vistazo.",
+      "Consulta los ingresos y las comisiones registradas.",
+      "Filtra los resultados por período.",
+      "Revisa la actividad de cada empleado.",
+      "Compara los resultados del equipo desde un mismo panel.",
     ],
   },
   {
     image: "/landing/mock-cuaderno-admin.png",
-    alt: "Cuaderno del negocio",
-    title: "Cuaderno: ningún servicio se queda sin registrar",
+    alt: "Registro diario de servicios",
+    title: "Registro diario de servicios: no pierdas ninguna venta",
+    intro:
+      "Registra los servicios que se realizaron fuera de la agenda para mantener un control más completo de la actividad del negocio. Los empleados pueden enviar sus anotaciones con el cliente, el valor y la fecha; después, el administrador puede aprobarlas o rechazarlas antes de que se reflejen en las comisiones y los reportes.",
     bullets: [
-      "El empleado anota lo que hizo por fuera de la Agenda, con cliente, monto y fecha.",
-      "Tú apruebas o rechazas cada anotación — solo lo aprobado cuenta en comisiones y reportes.",
-      "Las reservas completadas en la Agenda aparecen ahí también, marcadas con un ícono.",
-      "Filtra por empleado o por día, con el total de cada jornada calculado solo.",
+      "Registra los servicios realizados que no estaban en la agenda.",
+      "Revisa y aprueba las anotaciones de cada empleado.",
+      "Consulta los registros por empleado o por día.",
+      "Visualiza el total de cada jornada sin hacer los cálculos manualmente.",
     ],
   },
 ];
@@ -307,13 +331,14 @@ export default function LandingPage() {
 
       {/* Showcase */}
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
-        <div className="mx-auto mb-16 max-w-xl text-center">
+        <div className="mx-auto mb-16 max-w-2xl text-center">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
-            Así se ve por dentro
+            Conoce el software de gestión para salones de belleza
           </h2>
           <p className="mt-3 text-[var(--color-ink-700)]">
-            Tu negocio puede crear reservas directo desde la Agenda, y al mismo tiempo tus clientes reservan solos desde su propio link —
-            las dos vías alimentan la misma agenda.
+            Administra tu salón de belleza, barbería o spa desde una sola plataforma. Organiza las citas, gestiona a tus
+            empleados, controla las comisiones y consulta los resultados de tu negocio. Con Gebook, tú y tus clientes pueden
+            crear reservas desde una misma agenda, sin depender de mensajes dispersos o registros en papel.
           </p>
         </div>
 
@@ -327,6 +352,7 @@ export default function LandingPage() {
                 <h3 style={{ fontFamily: "var(--font-display)" }} className="text-center text-2xl font-semibold text-[var(--color-ink-900)] md:text-left">
                   {item.title}
                 </h3>
+                <p className="mt-3 text-center text-[var(--color-ink-700)] md:text-left">{item.intro}</p>
                 <ul className="mt-4 space-y-2.5">
                   {item.bullets.map((bullet) => (
                     <li key={bullet} className="flex items-start gap-2.5 text-[var(--color-ink-700)]">
@@ -345,10 +371,11 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 md:py-24">
         <div className="mx-auto mb-10 max-w-xl text-center">
           <h2 style={{ fontFamily: "var(--font-display)" }} className="text-3xl font-semibold text-[var(--color-ink-900)] sm:text-4xl">
-            Software de gestión para tu negocio de belleza, también desde el computador
+            Administra tu salón de belleza desde el computador o el celular
           </h2>
           <p className="mt-3 text-[var(--color-ink-700)]">
-            Administra la agenda de todo tu equipo, crea reservas para tus clientes y lleva el control del negocio desde cualquier pantalla.
+            Accede a la gestión de tu negocio desde diferentes dispositivos. Organiza las citas, administra a tus empleados y
+            consulta la información de tu salón sin depender de un único computador o de una libreta para llevar los registros.
           </p>
         </div>
         <DesktopFrame src="/landing/mock-desktop-agenda.png" alt="Agenda del negocio en computador" />
