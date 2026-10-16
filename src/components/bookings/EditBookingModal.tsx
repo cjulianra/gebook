@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useBusiness } from "@/lib/context/BusinessContext";
 import { Button } from "@/components/ui/Button";
 import { Label, FieldError } from "@/components/ui/Input";
 import { Avatar } from "@/components/ui/Avatar";
@@ -12,6 +11,7 @@ import { WeekStrip } from "@/components/ui/WeekStrip";
 import { cn } from "@/lib/utils/cn";
 import { bogotaDateTime, formatTime12h } from "@/lib/utils/dateRange";
 import { getAvailableSlots } from "@/app/[slug]/actions";
+import { notifyBookingCreated } from "@/app/app/[business]/reservas/actions";
 import { type Assignment, type Booking, type Employee, one } from "./types";
 
 export function EditBookingModal({
@@ -31,7 +31,6 @@ export function EditBookingModal({
   lockedEmployeeId?: string;
   onSaved: (booking: Pick<Booking, "id" | "start_at" | "end_at" | "business_member_id" | "business_members">) => void;
 }) {
-  const { business } = useBusiness();
   const service = one(booking?.services);
   const [bookingDay, setBookingDay] = useState(booking ? booking.start_at.slice(0, 10) : "");
   const [time, setTime] = useState(booking ? booking.start_at.slice(11, 16) : "");
@@ -138,13 +137,12 @@ export function EditBookingModal({
     if (employeeId !== lockedEmployeeId) {
       const client = one(booking.clients);
       const clientName = client ? `${client.first_name} ${client.last_name ?? ""}`.trim() : "un cliente";
-      await supabase.from("notifications").insert({
-        business_id: businessId,
-        business_member_id: employeeId,
-        title: "Reserva reprogramada",
-        body: `${service.name} con ${clientName} ahora es el ${bookingDay} a las ${formatTime12h(time)}.`,
-        link: `/app/${business.slug}/reservas`,
-      });
+      notifyBookingCreated(
+        businessId,
+        [employeeId],
+        "Reserva reprogramada",
+        `${service.name} con ${clientName} ahora es el ${bookingDay} a las ${formatTime12h(time)}.`
+      ).catch(() => {});
     }
   }
 
